@@ -1,21 +1,21 @@
-# Recommended Team Structure
+# Recommended Team Structure (4 Members)
 
-## Member 1 — Database & Backend Architecture (Foundation)
+## Member 1 — Database & Backend Core
 
 ### Responsibilities
 
 * SQLite database design
 * ERD (Entity Relationship Diagram)
-* Database initialization
-* SQL queries
-* Repository layer
+* Database initialization and migrations
+* SQL queries and repository layer
+* Core CRUD functions for users, posts, comments and categories
 
 ### Deliverables
 
 * `forum.db`
 * Database schema
 * Migration/creation scripts
-* CRUD functions
+* CRUD helpers for all core entities
 
 ### Tables
 
@@ -38,16 +38,16 @@ Everything depends on this work.
 
 ---
 
-## Member 2 — Authentication & Sessions
+## Member 2 — Authentication & Session Management
 
 ### Responsibilities
 
 * Registration
 * Login
 * Logout
-* Session management
-* Cookies
+* Session handling and cookies
 * Password hashing (bcrypt)
+* Auth middleware and access control
 
 ### Deliverables
 
@@ -88,7 +88,7 @@ Depends on:
 
 Provides:
 
-* User identity for Members 3, 4 and 5
+* User identity for Members 3 and 4
 
 ---
 
@@ -96,11 +96,11 @@ Provides:
 
 ### Responsibilities
 
-* Create posts
-* View posts
+* Create and view posts
 * Create comments
-* Categories
-* Post details page
+* Manage categories
+* Build post detail pages
+* Support the main content flow for the forum
 
 ### Deliverables
 
@@ -137,15 +137,15 @@ Depends on:
 
 ---
 
-## Member 4 — Likes, Dislikes & Filters
+## Member 4 — Likes, Filters, Frontend & Delivery
 
 ### Responsibilities
 
-* Like post
-* Dislike post
-* Like comment
-* Dislike comment
-* Filter system
+* Like/dislike posts and comments
+* Filter posts by category, user, and liked items
+* Build HTML templates and CSS styling
+* Handle error pages and final integration
+* Docker setup, testing and release readiness
 
 ### Deliverables
 
@@ -179,18 +179,42 @@ My Posts
 Liked Posts
 ```
 
+### Pages
+
+```text
+Home
+Login
+Register
+Create Post
+Post Details
+Profile
+Error Pages
+```
+
+### Quality & Delivery
+
+```text
+400
+401
+403
+404
+500
+Dockerfile
+Docker Compose (optional)
+go test ./...
+```
+
 ### Priority
 
-**Medium-High**
+**High**
 
 Depends on:
 
 * Posts
 * Authentication
+* Final integration from the full team
 
 ---
-
-## Member 5 — Frontend, Error Handling, Docker & Testing
 
 ### Responsibilities
 
@@ -246,18 +270,25 @@ Works in parallel with everyone.
 
 ---
 
-# Development Flow
+# Development Flow (4 Members)
 
 ## Phase 1 (Days 1–2)
 
 ### Member 1
 
-Database schema
+Database schema and repository foundation
 
-### Member 5
+### Member 2
 
-HTML structure
-Folder architecture
+Authentication skeleton and session setup
+
+### Member 3
+
+Core routes and models for posts, comments and categories
+
+### Member 4
+
+Project scaffolding, templates, static files and initial UI structure
 
 Result:
 
@@ -277,13 +308,21 @@ project/
 
 ## Phase 2 (Days 2–4)
 
+### Member 1
+
+Complete CRUD and database integration
+
 ### Member 2
 
-Authentication
+Registration, login, logout and auth middleware
 
 ### Member 3
 
-Posts & comments
+Post creation, post view and comment creation
+
+### Member 4
+
+Home page, auth pages and basic styling
 
 Result:
 
@@ -300,13 +339,21 @@ Create Comment
 
 ## Phase 3 (Days 4–5)
 
+### Member 1
+
+Support fixes and data consistency improvements
+
+### Member 2
+
+Session validation and user access checks
+
+### Member 3
+
+Category handling and post detail experience
+
 ### Member 4
 
-Likes/dislikes
-
-### Member 5
-
-Frontend styling
+Likes, dislikes, error pages and quality checks
 
 Result:
 
@@ -321,9 +368,21 @@ Dislike Comment
 
 ## Phase 4 (Days 5–6)
 
+### Member 1
+
+Final database verification and query optimization
+
+### Member 2
+
+Security review and auth hardening
+
+### Member 3
+
+Post/comment polish and category flow refinement
+
 ### Member 4
 
-Filters
+Filters, Docker setup, testing and final front-end polish
 
 Result:
 
@@ -339,7 +398,7 @@ Liked Posts Filter
 
 ### Entire Team
 
-Integration
+Final integration and delivery
 
 Checklist:
 
