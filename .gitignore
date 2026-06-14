@@ -1,0 +1,10 @@
+# Ignore generated SQLite database files
+*.db
+
+# Ignore editor temp files
+*.swp
+*.tmp
+.DS_Store
+
+# Ignore Go build outputs
+bin/
