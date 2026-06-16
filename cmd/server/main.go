@@ -14,6 +14,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer connection.Close()
+
 	store := db.NewStore(connection)
 
 	// 2. Register routes
