@@ -19,6 +19,7 @@ func main() {
 	// 2. Register routes
 	http.HandleFunc("/register", handlers.RegisterHandler(store))
 	http.HandleFunc("/login", handlers.LoginHandler(store))
+	http.HandleFunc("/logout", handlers.LogoutHandler(store))
 
 	// 3. Start server
 	log.Println("Server running on port :8080")

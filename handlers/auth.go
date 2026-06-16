@@ -142,6 +142,20 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 // LogoutHandler handles user logout.
 func LogoutHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO
+
+		// GET -> placeholder until sessions are implemented
+		if r.Method == http.MethodGet {
+			w.Write([]byte("Logout successful (session not implemented yet)"))
+			return
+		}
+
+		// POST -> placeholder logout action
+		if r.Method == http.MethodPost {
+			w.Write([]byte("Logout successful (session not implemented yet)"))
+			return
+		}
+
+		// Unsupported method
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
