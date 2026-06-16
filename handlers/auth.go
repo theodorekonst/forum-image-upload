@@ -94,7 +94,47 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 // LoginHandler handles user login.
 func LoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO
+
+		// GET -> show placeholder page
+		if r.Method == http.MethodGet {
+			w.Write([]byte("Login Page Placeholder"))
+			return
+		}
+
+		// POST -> process login
+		if r.Method == http.MethodPost {
+
+			// 1. Read form values
+			email := r.FormValue("email")
+			password := r.FormValue("password")
+
+			// 2. Basic empty check
+			if email == "" || password == "" {
+				http.Error(w, "please fill all fields", http.StatusBadRequest)
+				return
+			}
+
+			// 3. Verify email exists (err != nil means user not found by the way)
+			user, err := store.GetUserByEmail(email)
+			if err != nil {
+				http.Error(w, "invalid credentials", http.StatusBadRequest)
+				return
+			}
+
+			// 4. Verify password matches stored hash
+			err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+			if err != nil {
+				http.Error(w, "invalid credentials", http.StatusBadRequest)
+				return
+			}
+
+			// 5. Successful login (sessions will be added later)
+			w.Write([]byte("Login successful (session not implemented yet)"))
+			return
+		}
+
+		// Unsupported method
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
