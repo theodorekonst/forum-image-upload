@@ -1,51 +1,56 @@
-# Forum Backend Core (Member 1)
+# Forum Authentication & Session Management (Member 2)
 
-This repository contains the backend database core for the forum application. This README focuses on Member 1 responsibilities: schema, migrations, repository layer, seeding, and tests.
+This README covers Member 2's responsibilities implemented so far: registration, login, logout placeholder, password hashing, validation and error handling.
 
-**Member 1 scope**
+## Member 2 scope (current)
 
-- **Schema & Migrations**: [db/schema.sql](db/schema.sql)
-- **DB Initialization & Migrations**: [db/db.go](db/db.go)
-- **Repository (CRUD)**: [db/repo.go](db/repo.go) and [db/repo_extra.go](db/repo_extra.go)
-- **Seeding CLI**: [cmd/seed/main.go](cmd/seed/main.go)
-- **Unit tests**: [db/repo_test.go](db/repo_test.go)
+- Registration handler: handlers/auth.go
+- Login handler: handlers/auth.go
+- Logout placeholder: handlers/auth.go
+- Server setup & routes: cmd/server/main.go
+- Includes Member 1's branch repository and uses: db/repo.go
 
-**Quick setup & commands**
+## Quick setup & commands
 
-- Ensure modules and dependencies:
+- Install dependencies:
 
 ```bash
 go mod tidy
 ```
 
-- Seed the database (creates `forum.db` in repo root):
+- Run the server:
 
 ```bash
-go run ./cmd/seed
+go run ./cmd/server
 ```
 
-- Run repository unit tests:
+- Test endpoints (example):
 
 ```bash
-go test ./...
+curl -d "email=test@a.com&username=user123&password=Password1!" http://localhost:8080/register
+curl -d "email=test@a.com&password=Password1!" http://localhost:8080/login
+sqlite3 forum.db "SELECT * FROM users;"
 ```
 
-**Implementation notes**
+## Available routes
 
-- Uses `github.com/mattn/go-sqlite3` with the SQLite driver name `sqlite3`.
-- `go-sqlite3` requires CGO to be enabled when building or running tests.
-- The SQL schema is embedded in the `db` package so migrations run reliably from tests and CLIs.
-- `db/repo.go` implements core CRUD for `users`, `posts`, `comments`, `categories`, and `sessions`.
-- `db/repo_extra.go` provides likes and filtered query helper methods.
+- GET/POST /register
+- GET/POST /login
+- GET/POST /logout (placeholder)
 
-**Notes**
+## What works now:
 
-- If `go test ./...` fails due to CGO, install a C compiler and run with `CGO_ENABLED=1`.
-- The repository is intentionally scoped to Member 1 database backend work only.
+- Input validation (email, username, password)
+- bcrypt password hashing
+- Login credential verification
+- Unified handler structure
+- Initial route setup
 
-**Next recommended Member 1 tasks**
+## TODO / Next steps:
 
-- Add migration/versioning tooling (optional).
-- Expand unit tests to cover failure cases and constraint enforcement.
-- Add a small CLI for DB inspection/export if needed.
-
+- Session handling
+- Secure cookie handling
+- Logout (real implementation)
+- Auth middleware (RequireAuth / RequireGuest)
+- Access control for protected routes
+- Unit test files
