@@ -1,6 +1,6 @@
 # Forum Authentication & Session Management (Member 2)
 
-This README covers Member 2's responsibilities implemented so far: registration, login, logout placeholder, password hashing, validation and error handling.
+This README covers Member 2's responsibilities implemented so far: registration, login, logout placeholder, password hashing, validation, error handling, session lookup, and authentication middleware.
 
 ## Member 2 scope (current)
 
@@ -8,6 +8,8 @@ This README covers Member 2's responsibilities implemented so far: registration,
 - Login handler: handlers/auth.go
 - Logout placeholder: handlers/auth.go
 - Server setup & routes: cmd/server/main.go
+- Session lookup helper: middleware/auth.go (GetUserFromRequest)
+- Auth middleware: middleware/auth.go (RequireAuth / RequireGuest)
 - Includes Member 1's branch repository and uses: db/repo.go
 
 ## Quick setup & commands
@@ -45,12 +47,14 @@ sqlite3 forum.db "SELECT * FROM users;"
 - Login credential verification
 - Unified handler structure
 - Initial route setup
+- Session lookup from cookie (GetUserFromRequest)
+- Auth middleware (RequireAuth / RequireGuest)
 
 ## TODO / Next steps:
 
-- Session handling
+- Integrate session creation into login
+- Integrate session deletion into logout
 - Secure cookie handling
-- Logout (real implementation)
-- Auth middleware (RequireAuth / RequireGuest)
-- Access control for protected routes
-- Unit test files
+- Access control for protected routes (after session integration)
+- Unit test files for all auth functions
+- Final README update after full integration
