@@ -209,16 +209,32 @@ func (s *Store) AddPostCategory(postID, categoryID int64) error {
 	return err
 }
 
+// CreateSession creates a new session for a user with a unique token and expiration time.
 func (s *Store) CreateSession(userID int64, token string, expiresAt time.Time) (int64, error) {
-	result, err := s.DB.Exec(`INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)`, userID, token, expiresAt)
+
+	// Insert new session row
+	result, err := s.DB.Exec(
+		`INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)`,
+		userID, token, expiresAt,
+	)
 	if err != nil {
 		return 0, err
 	}
+
+	// Return new session ID
 	return result.LastInsertId()
 }
 
+// GetSession returns a session by its token or ErrNotFound if it does not exist.
 func (s *Store) GetSession(token string) (*Session, error) {
-	row := s.DB.QueryRow(`SELECT id, user_id, token, expires_at, created_at FROM sessions WHERE token = ?`, token)
+
+	// Query session by token
+	row := s.DB.QueryRow(
+		`SELECT id, user_id, token, expires_at, created_at FROM sessions WHERE token = ?`,
+		token,
+	)
+
+	// Scan into struct
 	var session Session
 	if err := row.Scan(&session.ID, &session.UserID, &session.Token, &session.ExpiresAt, &session.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -226,5 +242,6 @@ func (s *Store) GetSession(token string) (*Session, error) {
 		}
 		return nil, err
 	}
+
 	return &session, nil
 }

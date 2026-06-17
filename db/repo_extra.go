@@ -1,11 +1,15 @@
 package db
 
+// DeleteSession removes a session by its token and returns ErrNotFound if nothing was deleted.
 func (s *Store) DeleteSession(token string) error {
+
+	// Delete session row
 	result, err := s.DB.Exec(`DELETE FROM sessions WHERE token = ?`, token)
 	if err != nil {
 		return err
 	}
 
+	// Check if a row was actually removed
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err
@@ -13,6 +17,7 @@ func (s *Store) DeleteSession(token string) error {
 	if rows == 0 {
 		return ErrNotFound
 	}
+
 	return nil
 }
 
