@@ -21,6 +21,14 @@ func (s *Store) DeleteSession(token string) error {
 	return nil
 }
 
+// DeleteSessionsByUserID removes all sessions belonging to a specific user.
+func (s *Store) DeleteSessionsByUserID(userID int64) error {
+
+	// Delete all sessions for this user
+	_, err := s.DB.Exec(`DELETE FROM sessions WHERE user_id = ?`, userID)
+	return err
+}
+
 func (s *Store) AddLikeToPost(postID, userID int64) (int64, error) {
 	result, err := s.DB.Exec(`INSERT OR IGNORE INTO post_likes (post_id, user_id) VALUES (?, ?)`, postID, userID)
 	if err != nil {
