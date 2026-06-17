@@ -55,6 +55,15 @@ func RequireAuth(store *db.Store, next http.Handler) http.Handler {
 // RequireGuest ensures logged-in users cannot access login/register.
 func RequireGuest(store *db.Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO
+
+		// If user is logged in -> redirect away
+		user, _ := GetUserFromRequest(store, r)
+		if user != nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		// Guest -> continue
+		next.ServeHTTP(w, r)
 	})
 }
