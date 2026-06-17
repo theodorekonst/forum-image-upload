@@ -39,7 +39,16 @@ func GetUserFromRequest(store *db.Store, r *http.Request) (*db.User, error) {
 // RequireAuth ensures only logged-in users can access a route.
 func RequireAuth(store *db.Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO
+
+		// Try to get user from session
+		user, err := GetUserFromRequest(store, r)
+		if err != nil || user == nil {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		// User exists -> continue
+		next.ServeHTTP(w, r)
 	})
 }
 
