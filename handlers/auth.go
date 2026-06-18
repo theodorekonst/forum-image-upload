@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -129,9 +131,37 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 				return
 			}
 
-			// 5. Successful login (sessions will be added later)
-			w.Write([]byte("Login successful (session not implemented yet)"))
-			return
+			// 5. Session & Cookie Handling
+			// Delete old sessions
+			store.DeleteSessionsByUserID(user.ID)
+
+			// Generate new token
+			token := uuid.New().String()
+
+			// Create session in database
+			expiresAt := time.Now().Add(24 * time.Hour)
+			_, err = store.CreateSession(user.ID, token, expiresAt)
+			if err != nil {
+				log.Println("error creating session:", err)
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
+
+			// Set cookie
+			http.SetCookie(w, &http.Cookie{
+				Name:  "session",
+				Value: token,
+				Path:  "/",
+				// Domain -> in production when there are subdomains
+				Expires: expiresAt,
+				// MaxAge -> alternative to Expires (MaxAge: 86400)
+				Secure:   false, // in production, true
+				HttpOnly: true,
+				SameSite: http.SameSiteStrictMode,
+			})
+
+			// 6. Redirect to home
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 		}
 
 		// Unsupported method
@@ -143,16 +173,42 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 func LogoutHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// GET -> placeholder until sessions are implemented
+		// GET -> method not allowed (CSRF protection)
 		if r.Method == http.MethodGet {
-			w.Write([]byte("Logout successful (session not implemented yet)"))
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		// POST -> placeholder logout action
+		// POST -> process logout
 		if r.Method == http.MethodPost {
-			w.Write([]byte("Logout successful (session not implemented yet)"))
-			return
+
+			// 1. Read session cookie
+			cookie, err := r.Cookie("session")
+			if err != nil {
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+
+			// 2. Delete session from database
+			err = store.DeleteSession(cookie.Value)
+			if err != nil {
+				log.Println("error deleting session", err)
+			}
+
+			// 3. Clear cookie in browser
+			http.SetCookie(w, &http.Cookie{
+				Name:     "session",
+				Value:    "",
+				Path:     "/",
+				Expires:  time.Unix(0, 0), // expires immediately
+				MaxAge:   -1,              // deletes immediately
+				Secure:   false,           // in production, true
+				HttpOnly: true,
+				SameSite: http.SameSiteStrictMode,
+			})
+
+			// 4. Redirect to login
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 
 		// Unsupported method
