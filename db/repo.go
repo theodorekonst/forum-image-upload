@@ -77,6 +77,19 @@ func (s *Store) GetUserByEmail(email string) (*User, error) {
 	return scanUser(row)
 }
 
+// GetUserByUsername returns a user by username or ErrNotFound if it does not exist.
+func (s *Store) GetUserByUsername(username string) (*User, error) {
+
+	// Query user by username
+	row := s.DB.QueryRow(
+		`SELECT id, email, username, password_hash, created_at FROM users WHERE username = ?`,
+		username,
+	)
+
+	// Scan into struct
+	return scanUser(row)
+}
+
 func scanUser(row scanner) (*User, error) {
 	var user User
 	if err := row.Scan(&user.ID, &user.Email, &user.Username, &user.PasswordHash, &user.CreatedAt); err != nil {

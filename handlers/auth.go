@@ -68,7 +68,14 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 				return
 			}
 
-			// 4. Hash password
+			// 4. Check if username exists
+			_, err = store.GetUserByUsername(username)
+			if err == nil {
+				http.Error(w, "username already exists", http.StatusBadRequest)
+				return
+			}
+
+			// 5. Hash password
 			hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 			if err != nil {
 				log.Println("error hashing password:", err)
@@ -76,7 +83,7 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 				return
 			}
 
-			// 5. Create user
+			// 6. Create user
 			_, err = store.CreateUser(email, username, string(hash))
 			if err != nil {
 				log.Println("error creating user:", err)
@@ -84,7 +91,7 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 				return
 			}
 
-			// 6. Redirect to login
+			// 7. Redirect to login
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
