@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Temporary placeholder for home page (testing purposes)
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Home Page Placeholder"))
+}
+
 // RegisterHandler handles user registration.
 func RegisterHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
