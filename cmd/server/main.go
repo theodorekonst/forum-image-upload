@@ -19,15 +19,20 @@ func main() {
 
 	store := db.NewStore(connection)
 
+	// Create custom mux
+	mux := http.NewServeMux()
+
 	// 2. Protect home page
-	http.HandleFunc("/", middleware.RequireAuth(store, handlers.HomeHandler)) // HomeHandler -> HomePage (when home page will be created)
+	mux.Handle("/", middleware.RequireAuth(store, http.HandlerFunc(handlers.HomeHandler))) // HomeHandler -> HomePage (when created)
 
-	// 3. Auth routes
-	http.HandleFunc("/register", handlers.RegisterHandler(store))
-	http.HandleFunc("/login", handlers.LoginHandler(store))
-	http.HandleFunc("/logout", handlers.LogoutHandler(store))
+	// 3. Guest-only routes
+	mux.Handle("/register", middleware.RequireGuest(store, handlers.RegisterHandler(store)))
+	mux.Handle("/login", middleware.RequireGuest(store, handlers.LoginHandler(store)))
 
-	// 4. Start server
+	// 4. Logout (requires auth)
+	mux.Handle("/logout", middleware.RequireAuth(store, handlers.LogoutHandler(store)))
+
+	// 5. Start server
 	log.Println("Server running on port :8080")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", mux)
 }
