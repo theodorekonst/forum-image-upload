@@ -225,10 +225,13 @@ func (s *Store) AddPostCategory(postID, categoryID int64) error {
 // CreateSession creates a new session for a user with a unique token and expiration time.
 func (s *Store) CreateSession(userID int64, token string, expiresAt time.Time) (int64, error) {
 
+	// Get current time in local timezone
+	now := time.Now()
+
 	// Insert new session row
 	result, err := s.DB.Exec(
-		`INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)`,
-		userID, token, expiresAt,
+		`INSERT INTO sessions (user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?)`,
+		userID, token, expiresAt, now,
 	)
 	if err != nil {
 		return 0, err
