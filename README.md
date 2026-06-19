@@ -1,60 +1,134 @@
-# Forum Authentication & Session Management (Member 2)
+# Member 4 — Likes, Filters, Frontend & Delivery
 
-This README covers Member 2's responsibilities: registration, login, logout, session handling, cookies, bcrypt hashing, auth middleware, and access control.
+This document tracks my scope of the forum project: the user-facing layer
+(HTML templates + CSS), the like/dislike system, the post filters, error
+handling, Docker, and testing. It also serves as a running checklist so the
+team can see what is done and what is pending.
 
-## Member 2 scope (current)
+## Scope
 
-- Registration (POST /register)
-- Login (POST /login)
-- Logout (POST /logout)
-- Session creation & deletion
-- Single active session per user
-- Cookie‑based authentication
-- Auth middleware (RequireAuth / RequireGuest)
-- Mux router integration
-- Uses Member 1's repository layer (db/repo.go)
+| Area | Responsibility |
+|------|----------------|
+| Frontend | All HTML templates and CSS styling |
+| Likes/Dislikes | Like & dislike buttons for posts and comments |
+| Filters | Filter posts by category, by my posts, by liked posts |
+| Error pages | 400, 401, 403, 404, 500 |
+| Delivery | Dockerfile, optional docker-compose, tests, final integration |
 
-## Quick setup & commands
+## Dependencies
 
-- Install dependencies:
+This work builds on top of the other members' branches:
 
-```bash
-go mod tidy
-```
+- **Member 1 (Database & Backend Core):** tables (`users`, `posts`, `comments`,
+  `categories`, `post_categories`, `post_likes`, `comment_likes`, `sessions`),
+  schema, and the repository/CRUD layer.
+- **Member 2 (Auth & Sessions):** registration, login, logout, session cookies,
+  password hashing, and `RequireAuth()` middleware that tells the frontend
+  whether a user is logged in.
+- **Member 3 (Posts, Comments & Categories):** create/view post routes,
+  comment creation, category management, and post detail data.
 
-- Run the server:
+The frontend consumes data these layers produce; the like/filter handlers
+read from and write to Member 1's tables and rely on Member 2's session info
+to know *who* the current user is.
 
-```bash
-go run ./cmd/server
-```
+## Templates
 
-- Test examples:
+Located in `templates/`. Built with Go's `html/template` (no frontend
+frameworks, per the project rules).
 
-  **Register:** `curl -d "email=test1@example.com&username=user123&password=Password_123" http://localhost:8080/register`
-  **Login:** `curl -d "email=test1@example.com&password=Password_123" http://localhost:8080/login`
-  **Check DB:** `sqlite3 forum.db "SELECT * FROM sessions;"`
-  **Expire session:** `UPDATE sessions SET expires_at='2000-01-01 00:00:00' WHERE id=X;`
-  **Test cookie:** `curl -i -b "session=TOKEN" http://localhost:8080/`
-  **Logout:** `curl -i -b "session=TOKEN" http://localhost:8080/logout`
+| Template | Purpose |
+|----------|---------|
+| `home.html` | Landing page: lists all posts, shows like/dislike counts and filters |
+| `login.html` | Login form (email + password) → `POST /login` |
+| `register.html` | Register form (email + username + password) → `POST /register` |
+| `post.html` | Single post detail with comments and like/dislike controls |
+| `profile.html` | Logged-in user's profile (their posts / liked posts) |
+| `error.html` | Generic error page reused for all HTTP error codes |
 
-## Available routes
+## Static files
 
-- GET/POST /register
-- GET/POST /login
-- POST /logout
-- GET / (home page, protected)
+Located in `static/`:
 
-## What works now:
+- `static/css/style.css` — site styling (layout, spacing, form/button styles)
+- `static/images/` — any icons or images used by the UI
 
-- Input validation (email, username, password)
-- bcrypt password hashing
-- Session storage with local timezone and expiration
-- One active session per user
-- Cookie handling (HttpOnly, SameSite)
-- Protected routes via middleware
-- Clean server routing with mux
+## Likes & Dislikes
 
-## TODO / Next steps:
+Routes handled in `handlers/likes.go`:
 
-- Unit test files for all auth functions
-- Final README update
+- `POST /post/like`
+- `POST /comment/like`
+
+Rules:
+
+- Only registered (logged-in) users can like/dislike — enforced via auth
+  middleware before the handler runs.
+- Like and dislike counts are visible to everyone, including guests.
+- A user can have at most one reaction per post/comment.
+
+## Filters
+
+Routes/logic handled in `handlers/filters.go`:
+
+- **By category** — e.g. Programming, Sports, Gaming, Movies (works for everyone).
+- **My posts** — posts created by the logged-in user (registered users only).
+- **Liked posts** — posts the logged-in user has liked (registered users only).
+
+The last two require a session, since they refer to the currently logged-in
+user.
+
+## Error handling
+
+A single `error.html` template is reused for all error responses, with the
+correct HTTP status code set by the handler:
+
+- `400` Bad Request
+- `401` Unauthorized
+- `403` Forbidden
+- `404` Not Found
+- `500` Internal Server Error
+
+## Docker
+
+- `Dockerfile` — builds and runs the forum container.
+- `docker-compose.yml` — optional, for convenience.
+- Note: `mattn/go-sqlite3` uses CGO, so the build needs a C toolchain
+  available at compile time (this affects how the Dockerfile is written).
+
+## Testing
+
+- `go test ./...`
+- Test files live next to the code they test, using the `*_test.go` convention.
+
+## Progress checklist
+
+### Phase 1 — Scaffolding
+- [x] Folder structure (`templates/`, `static/css/`, `static/images/`)
+- [x] Merge Member 1 & Member 2 branches into this branch
+- [x] `templates/login.html` (basic structure)
+- [x] `templates/register.html` (basic structure)
+- [ ] Placeholder `handlers/likes.go`
+- [ ] Placeholder `handlers/filters.go`
+
+### Phase 2 — Core pages & styling
+- [ ] `templates/home.html`
+- [ ] `static/css/style.css` (base styling)
+- [ ] Wire login/register forms to their routes (verify end-to-end)
+
+### Phase 3 — Likes & errors
+- [ ] Like/dislike for posts
+- [ ] Like/dislike for comments
+- [ ] `templates/error.html`
+- [ ] Error responses for 400/401/403/404/500
+
+### Phase 4 — Filters & delivery
+- [ ] Category filter
+- [ ] My posts filter
+- [ ] Liked posts filter
+- [ ] `Dockerfile`
+- [ ] Tests for likes & filters
+- [ ] Final front-end polish
+
+### Phase 5 — Integration
+- [ ] Full team integration & delivery checklist verified
