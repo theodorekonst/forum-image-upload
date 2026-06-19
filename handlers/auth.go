@@ -132,14 +132,14 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			// 3. Verify email exists (err != nil means user not found by the way)
 			user, err := store.GetUserByEmail(email)
 			if err != nil {
-				http.Error(w, "invalid credentials", http.StatusBadRequest)
+				http.Error(w, "invalid credentials", http.StatusUnauthorized)
 				return
 			}
 
 			// 4. Verify password matches stored hash
 			err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 			if err != nil {
-				http.Error(w, "invalid credentials", http.StatusBadRequest)
+				http.Error(w, "invalid credentials", http.StatusUnauthorized)
 				return
 			}
 
