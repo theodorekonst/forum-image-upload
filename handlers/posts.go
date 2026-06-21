@@ -52,3 +52,34 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 
 	}
 }
+
+func ViewPostHandler(store *db.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := middleware.GetUserFromRequest(store, r)
+
+		idStr := r.URL.Query().Get("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			http.Error(w, "invalid post id", http.StatusBadRequest)
+			return
+		}
+
+		post, err := store.GetPostByID(id)
+		if err != nil {
+			http.Error(w, "post not found", http.StatusNotFound)
+			return
+		}
+
+		comments, err := store.ListCommentsByPost(id)
+		if err != nil {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		postTmpl.Execute(w, map[string]any{
+			"User":     user,
+			"Post":     post,
+			"Comments": comments,
+		})
+	}
+}
