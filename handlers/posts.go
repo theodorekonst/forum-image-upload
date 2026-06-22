@@ -9,7 +9,7 @@ import (
 )
 
 var postTmpl = template.Must(template.ParseFiles("templates/post.html"))
-var createPostTmpl = template.Must(template.ParseFiles("templates/createPost.html"))
+var createPostTmpl = template.Must(template.ParseFiles("templates/create_post.html"))
 
 func CreatePostHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
