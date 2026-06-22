@@ -32,6 +32,10 @@ func main() {
 	// 4. Logout (requires auth)
 	mux.Handle("/logout", middleware.RequireAuth(store, handlers.LogoutHandler(store)))
 
+	mux.Handle("/post/create", middleware.RequireAuth(store, handlers.CreatePostHandler(store)))
+	mux.Handle("/post", handlers.ViewPostHandler(store))
+	mux.Handle("/comment/create", middleware.RequireAuth(store, handlers.CreateCommentHandler(store)))
+
 	// 5. Start server
 	log.Println("Server running on port :8080")
 	http.ListenAndServe(":8080", mux)
