@@ -12,18 +12,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Temporary placeholder for home page (testing purposes)
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Home Page Placeholder"))
-}
-
 // RegisterHandler handles user registration.
 func RegisterHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// GET -> show placeholder page
+		// GET -> show registration form
 		if r.Method == http.MethodGet {
-			w.Write([]byte("Register Page Placeholder"))
+			if err := renderPage(w, "register.html", nil); err != nil {
+				RenderError(w, http.StatusInternalServerError, "Could not render the registration page.")
+			}
 			return
 		}
 
@@ -110,9 +107,11 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 func LoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// GET -> show placeholder page
+		// GET -> show login form
 		if r.Method == http.MethodGet {
-			w.Write([]byte("Login Page Placeholder"))
+			if err := renderPage(w, "login.html", nil); err != nil {
+				RenderError(w, http.StatusInternalServerError, "Could not render the login page.")
+			}
 			return
 		}
 
@@ -174,6 +173,7 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 
 			// 6. Redirect to home
 			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
 		}
 
 		// Unsupported method
@@ -221,6 +221,7 @@ func LogoutHandler(store *db.Store) http.HandlerFunc {
 
 			// 4. Redirect to login
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
 		}
 
 		// Unsupported method

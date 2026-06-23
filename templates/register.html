@@ -2,27 +2,28 @@
 <html lang="en">
     <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
     <link rel="stylesheet" href="/static/css/style.css">
     </head>
     <body>
-        <h1>Register</h1>
-        <form method="POST" action="/register">
-            <label>Email:</label>
-            
-            <input type="email" name="email">
+        <main class="auth-page">
+            <section class="form-panel" aria-labelledby="register-heading">
+                <h1 id="register-heading">Register</h1>
+                <form class="content-form" method="POST" action="/register">
+                    <label for="register-email">Email</label>
+                    <input id="register-email" type="email" name="email" required>
 
-            <label>Username:</label>
+                    <label for="register-username">Username</label>
+                    <input id="register-username" type="text" name="username" required>
 
-            <input type="text" name="username">
-   
-            <label>Password:</label>
+                    <label for="register-password">Password</label>
+                    <input id="register-password" type="password" name="password" required>
 
-            <input type="password" name="password">
-
-            <button type="submit">Register</button>
-
-            <p>Already have an account? <a href="/login">Log in here</a></p>
-        </form>   
+                    <button type="submit">Register</button>
+                    <p class="form-copy">Already have an account? <a href="/login">Log in</a></p>
+                </form>
+            </section>
+        </main>
     </body>
 </html>

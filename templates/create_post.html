@@ -3,23 +3,46 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Post</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body>
-    <h1>Create Post</h1>
-    <form method="POST" action="/post/create">
-        <label>Title:</label>
-        <input type="text" name="title" required>
-        <label>Content:</label>
-        <textarea name="content" required></textarea>
-        <label>Categories</label>
-        {{range .Categories}}
-        <input type="checkbox" name="categories" value="{{.ID}}">{{.Name}}
-        {{end}}
-        <button>Submit</button>
+    <nav class="site-nav">
+        <a class="site-logo" href="/">
+            <img class="logo-default" src="/static/images/Logo%20Full%20White.svg" alt="Forum home">
+            <img class="logo-hover" src="/static/images/Logo%20Full%20Orange.svg" alt="">
+        </a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+        </div>
+    </nav>
 
-    </form>
+    <main class="content-page">
+        <section class="form-panel" aria-labelledby="create-post-heading">
+            <h1 id="create-post-heading">Create post</h1>
+            <form class="content-form" method="POST" action="/post/create">
+                <label for="post-title">Title</label>
+                <input id="post-title" type="text" name="title" required>
+
+                <label for="post-content">Content</label>
+                <textarea id="post-content" name="content" required></textarea>
+
+                <fieldset class="category-options">
+                    <legend>Categories</legend>
+                    {{range .Categories}}
+                    <label>
+                        <input type="checkbox" name="categories" value="{{.ID}}">
+                        {{.Name}}
+                    </label>
+                    {{end}}
+                </fieldset>
+
+                <button type="submit">Publish post</button>
+            </form>
+        </section>
+    </main>
 
 </body>
 

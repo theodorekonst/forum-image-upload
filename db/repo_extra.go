@@ -79,6 +79,24 @@ func (s *Store) ListPostsByCategory(categoryID int64, limit, offset int) ([]*Pos
 	return posts, rows.Err()
 }
 
+func (s *Store) ListCategoriesByPost(postID int64) ([]string, error) {
+	rows, err := s.DB.Query(`SELECT c.name FROM categories c JOIN post_categories pc ON c.id = pc.category_id WHERE pc.post_id = ? ORDER BY c.name`, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []string
+	for rows.Next() {
+		var category string
+		if err := rows.Scan(&category); err != nil {
+			return nil, err
+		}
+		categories = append(categories, category)
+	}
+	return categories, rows.Err()
+}
+
 func (s *Store) ListPostsByAuthor(authorID int64, limit, offset int) ([]*Post, error) {
 	rows, err := s.DB.Query(`SELECT id, author_id, title, content, created_at FROM posts WHERE author_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`, authorID, limit, offset)
 	if err != nil {

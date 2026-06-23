@@ -22,8 +22,9 @@ func main() {
 	// Create custom mux
 	mux := http.NewServeMux()
 
-	// 2. Protect home page
-	mux.Handle("/", middleware.RequireAuth(store, http.HandlerFunc(handlers.HomeHandler))) // HomeHandler -> HomePage (when created)
+	// 2. Public home page and static frontend assets
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.Handle("/", handlers.HomeHandler(store))
 
 	// 3. Guest-only routes
 	mux.Handle("/register", middleware.RequireGuest(store, handlers.RegisterHandler(store)))
@@ -38,5 +39,7 @@ func main() {
 
 	// 5. Start server
 	log.Println("Server running on port :8080")
-	http.ListenAndServe(":8080", mux)
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatal(err)
+	}
 }

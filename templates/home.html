@@ -14,8 +14,15 @@
             <img class="logo-hover" src="/static/images/Logo%20Full%20Orange.svg" alt="">
         </a>
         <div class="nav-links">
+            {{if .User}}
+            <a href="/post/create">Create post</a>
+            <form class="logout-form" method="POST" action="/logout">
+                <button type="submit">Logout</button>
+            </form>
+            {{else}}
             <a href="/login">Login</a>
             <a href="/register">Register</a>
+            {{end}}
         </div>
     </nav>
 
@@ -29,14 +36,14 @@
             <aside class="filters-panel" id="filters-panel">
                 <h2>Filters</h2>
                 <nav class="filter-list" aria-label="Post filters">
-                    <a href="/">All posts</a>
-                    <a href="/?category=Programming">Programming</a>
-                    <a href="/?category=Design">Design</a>
-                    <a href="/?category=Sports">Sports</a>
-                    <a href="/?category=Gaming">Gaming</a>
-                    <a href="/?category=Movies">Movies</a>
-                    <a href="/?filter=mine">My posts</a>
-                    <a href="/?filter=liked">Liked posts</a>
+                    <a class="{{if eq .ActiveFilter "all"}}is-active{{end}}" href="/">All posts</a>
+                    {{range .Categories}}
+                    <a class="{{if eq $.ActiveCategory .Name}}is-active{{end}}" href="/?category={{urlquery .Name}}">{{.Name}}</a>
+                    {{end}}
+                    {{if .User}}
+                    <a class="{{if eq .ActiveFilter "mine"}}is-active{{end}}" href="/?filter=mine">My posts</a>
+                    <a class="{{if eq .ActiveFilter "liked"}}is-active{{end}}" href="/?filter=liked">Liked posts</a>
+                    {{end}}
                 </nav>
             </aside>
         </div>
@@ -47,7 +54,11 @@
                 <h2><a href="/post?id={{.ID}}">{{.Title}}</a></h2>
                 <p class="post-meta">Posted by <strong>{{.Author}}</strong> on <time>{{.CreatedAt.Format "January 2, 2006"}}</time></p>
                 <p class="post-excerpt">{{.Excerpt}}</p>
-                <span class="category-badge">{{.Category}}</span>
+                {{range .Categories}}
+                <span class="category-badge">{{.}}</span>
+                {{else}}
+                <span class="category-badge">Uncategorized</span>
+                {{end}}
                 <div class="reaction-row" aria-label="Post reactions">
                     <button class="reaction-button" type="button" aria-label="Like post">
                         <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">

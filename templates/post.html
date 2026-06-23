@@ -2,32 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Post.Title}}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <h1>{{.Post.Title}}</h1>
-    <p>{{.Post.Content}}</p>
-    <p>Posted on {{.Post.CreatedAt}}</p>
+    <nav class="site-nav">
+        <a class="site-logo" href="/">
+            <img class="logo-default" src="/static/images/Logo%20Full%20White.svg" alt="Forum home">
+            <img class="logo-hover" src="/static/images/Logo%20Full%20Orange.svg" alt="">
+        </a>
+        <div class="nav-links">
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        </div>
+    </nav>
 
-    <h2>Comments</h2>
-    {{if .Comments}}
-        {{range .Comments}}
-            <p>{{.Content}}</p>
-            <small>{{.CreatedAt}}</small>
+    <main class="content-page">
+        <article class="post-detail">
+            <p class="post-meta">Posted on <time>{{.Post.CreatedAt.Format "January 2, 2006"}}</time></p>
+            <h1>{{.Post.Title}}</h1>
+            <p class="post-body">{{.Post.Content}}</p>
+        </article>
+
+        <section class="comments-section" aria-labelledby="comments-heading">
+            <h2 id="comments-heading">Comments</h2>
+            {{if .Comments}}
+                <div class="comment-list">
+                    {{range .Comments}}
+                    <article class="comment-card">
+                        <p>{{.Content}}</p>
+                        <time>{{.CreatedAt.Format "January 2, 2006"}}</time>
+                    </article>
+                    {{end}}
+                </div>
+            {{else}}
+                <p class="empty-copy">No comments yet.</p>
+            {{end}}
+        </section>
+
+        {{if .User}}
+        <section class="comment-form-section" aria-labelledby="add-comment-heading">
+            <h2 id="add-comment-heading">Add a comment</h2>
+            <form class="content-form" method="POST" action="/comment/create">
+                <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                <label for="comment-content">Comment</label>
+                <textarea id="comment-content" name="content" required></textarea>
+                <button type="submit">Post comment</button>
+            </form>
+        </section>
         {{end}}
-    {{else}}
-        <p>No comments yet.</p>
-    {{end}}
-
-    {{if .User}}
-    <h2>Add a Comment</h2>
-    <form method="POST" action="/comment/create">
-        <input type="hidden" name="post_id" value="{{.Post.ID}}">
-        <textarea name="content" required></textarea>
-        <button type="submit">Post Comment</button>
-    </form>
-    {{end}}
-
-    <a href="/">Back to Home</a>
+    </main>
 </body>
 </html>

@@ -18,15 +18,18 @@ func CreateCommentHandler(store *db.Store) http.HandlerFunc {
 		postIDStr := r.FormValue("post_id")
 		content := r.FormValue("content")
 		if content == "" {
-			http.Error(w, "content is required", http.StatusBadRequest)
+			RenderError(w, http.StatusBadRequest, "Comment text is required.")
 			return
 		}
 		postID, err := strconv.ParseInt(postIDStr, 10, 64)
 		if err != nil {
-			http.Error(w, "invalid post id", http.StatusBadRequest)
+			RenderError(w, http.StatusBadRequest, "Invalid post ID.")
 			return
 		}
-		store.CreateComment(postID, user.ID, content)
+		if _, err := store.CreateComment(postID, user.ID, content); err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not create the comment.")
+			return
+		}
 		http.Redirect(w, r, "/post?id="+strconv.FormatInt(postID, 10), http.StatusSeeOther)
 
 	}

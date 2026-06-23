@@ -2,23 +2,25 @@
 <html lang="en">
     <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log in</title>
     <link rel="stylesheet" href="/static/css/style.css">
     </head>
     <body>
-        <h1>Log in</h1>
-        <form method="POST" action="/login">
-            <label>Email:</label>
-            
-            <input type="email" name="email">
-   
-            <label>Password:</label>
+        <main class="auth-page">
+            <section class="form-panel" aria-labelledby="login-heading">
+                <h1 id="login-heading">Log in</h1>
+                <form class="content-form" method="POST" action="/login">
+                    <label for="login-email">Email</label>
+                    <input id="login-email" type="email" name="email" required>
 
-            <input type="password" name="password">
+                    <label for="login-password">Password</label>
+                    <input id="login-password" type="password" name="password" required>
 
-            <button type="submit">Log in</button>
-
-            <p>Don't have an account? <a href="/register">Register here</a></p>
-        </form>    
+                    <button type="submit">Log in</button>
+                    <p class="form-copy">Don't have an account? <a href="/register">Register</a></p>
+                </form>
+            </section>
+        </main>
     </body>
 </html>
