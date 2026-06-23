@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Post.Title}}</title>
+</head>
+<body>
+    <h1>{{.Post.Title}}</h1>
+    <p>{{.Post.Content}}</p>
+    <p>Posted on {{.Post.CreatedAt}}</p>
+
+    <h2>Comments</h2>
+    {{if .Comments}}
+        {{range .Comments}}
+            <p>{{.Content}}</p>
+            <small>{{.CreatedAt}}</small>
+        {{end}}
+    {{else}}
+        <p>No comments yet.</p>
+    {{end}}
+
+    {{if .User}}
+    <h2>Add a Comment</h2>
+    <form method="POST" action="/comment/create">
+        <input type="hidden" name="post_id" value="{{.Post.ID}}">
+        <textarea name="content" required></textarea>
+        <button type="submit">Post Comment</button>
+    </form>
+    {{end}}
+
+    <a href="/">Back to Home</a>
+</body>
+</html>

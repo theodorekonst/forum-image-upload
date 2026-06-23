@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Create Post</title>
+</head>
+
+<body>
+    <h1>Create Post</h1>
+    <form method="POST" action="/post/create">
+        <label>Title:</label>
+        <input type="text" name="title" required>
+        <label>Content:</label>
+        <textarea name="content" required></textarea>
+        <label>Categories</label>
+        {{range .Categories}}
+        <input type="checkbox" name="categories" value="{{.ID}}">{{.Name}}
+        {{end}}
+        <button>Submit</button>
+
+    </form>
+
+</body>
+
+</html>
