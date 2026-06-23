@@ -2,12 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="/static/js/filters-toggle.js"></script>
 </head>
 <body>
     <nav class="site-nav">
-        <a class="site-logo" href="/">Forum</a>
+        <a class="site-logo" href="/">
+            <img class="logo-default" src="/static/images/Logo%20Full%20White.svg" alt="Forum home">
+            <img class="logo-hover" src="/static/images/Logo%20Full%20Orange.svg" alt="">
+        </a>
         <div class="nav-links">
             <a href="/login">Login</a>
             <a href="/register">Register</a>
@@ -15,19 +20,26 @@
     </nav>
 
     <main class="home-layout">
-        <aside class="filters-panel">
-            <h2>Filters</h2>
-            <nav class="filter-list" aria-label="Post filters">
-                <a href="/">All posts</a>
-                <a href="/?category=Programming">Programming</a>
-                <a href="/?category=Design">Design</a>
-                <a href="/?category=Sports">Sports</a>
-                <a href="/?category=Gaming">Gaming</a>
-                <a href="/?category=Movies">Movies</a>
-                <a href="/?filter=mine">My posts</a>
-                <a href="/?filter=liked">Liked posts</a>
-            </nav>
-        </aside>
+        <div class="filters-area">
+            <button class="filters-toggle" id="filters-toggle" type="button" aria-controls="filters-panel" aria-expanded="true" aria-label="Hide filters" title="Show or hide filters">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M4 7h16M4 12h16M4 17h16"></path>
+                </svg>
+            </button>
+            <aside class="filters-panel" id="filters-panel">
+                <h2>Filters</h2>
+                <nav class="filter-list" aria-label="Post filters">
+                    <a href="/">All posts</a>
+                    <a href="/?category=Programming">Programming</a>
+                    <a href="/?category=Design">Design</a>
+                    <a href="/?category=Sports">Sports</a>
+                    <a href="/?category=Gaming">Gaming</a>
+                    <a href="/?category=Movies">Movies</a>
+                    <a href="/?filter=mine">My posts</a>
+                    <a href="/?filter=liked">Liked posts</a>
+                </nav>
+            </aside>
+        </div>
 
         <section class="post-list" aria-label="Posts">
             {{range .Posts}}
