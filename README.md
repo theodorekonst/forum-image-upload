@@ -53,8 +53,3 @@ go run ./cmd/server
 - Cookie handling (HttpOnly, SameSite)
 - Protected routes via middleware
 - Clean server routing with mux
-
-## TODO / Next steps:
-
-- Unit test files for all auth functions
-- Final README update

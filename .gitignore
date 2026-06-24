@@ -1,6 +1,9 @@
 # Ignore generated SQLite database files
 *.db
 
+# Ignore coverage output
+*.out
+
 # Ignore editor temp files
 *.swp
 *.tmp
