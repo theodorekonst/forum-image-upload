@@ -5,6 +5,7 @@ import (
 	"forum/middleware"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func CreatePostHandler(store *db.Store) http.HandlerFunc {
@@ -57,6 +58,26 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 	}
 }
 
+type viewComment struct {
+	ID           int64
+	Author       string
+	Content      string
+	CreatedAt    time.Time
+	Likes        int64
+	Dislikes     int64
+	UserReaction string
+}
+
+type postPageData struct {
+	User             *db.User
+	Post             *db.Post
+	PostAuthor       string
+	PostLikes        int64
+	PostDislikes     int64
+	PostUserReaction string
+	Comments         []viewComment
+}
+
 func ViewPostHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, _ := middleware.GetUserFromRequest(store, r)
@@ -74,16 +95,81 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		comments, err := store.ListCommentsByPost(id)
+		postAuthor, err := store.GetUserByID(post.AuthorID)
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load post author.")
+			return
+		}
+
+		postLikes, err := store.CountPostLikes(post.ID)
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+			return
+		}
+		postDislikes, err := store.CountPostDislikes(post.ID)
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+			return
+		}
+		postUserReaction := ""
+		if user != nil {
+			postUserReaction, err = store.GetPostReaction(post.ID, user.ID)
+			if err != nil {
+				RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+				return
+			}
+		}
+
+		rawComments, err := store.ListCommentsByPost(id)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Could not load comments.")
 			return
 		}
 
-		if err := renderPage(w, "post.html", map[string]any{
-			"User":     user,
-			"Post":     post,
-			"Comments": comments,
+		comments := make([]viewComment, 0, len(rawComments))
+		for _, c := range rawComments {
+			commentAuthor, err := store.GetUserByID(c.AuthorID)
+			if err != nil {
+				RenderError(w, http.StatusInternalServerError, "Could not load comment author.")
+				return
+			}
+			likes, err := store.CountCommentLikes(c.ID)
+			if err != nil {
+				RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+				return
+			}
+			dislikes, err := store.CountCommentDislikes(c.ID)
+			if err != nil {
+				RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+				return
+			}
+			userReaction := ""
+			if user != nil {
+				userReaction, err = store.GetCommentReaction(c.ID, user.ID)
+				if err != nil {
+					RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+					return
+				}
+			}
+			comments = append(comments, viewComment{
+				ID:           c.ID,
+				Author:       commentAuthor.Username,
+				Content:      c.Content,
+				CreatedAt:    c.CreatedAt,
+				Likes:        likes,
+				Dislikes:     dislikes,
+				UserReaction: userReaction,
+			})
+		}
+
+		if err := renderPage(w, "post.html", postPageData{
+			User:             user,
+			Post:             post,
+			PostAuthor:       postAuthor.Username,
+			PostLikes:        postLikes,
+			PostDislikes:     postDislikes,
+			PostUserReaction: postUserReaction,
+			Comments:         comments,
 		}); err != nil {
 			RenderError(w, http.StatusInternalServerError, "Could not render the post page.")
 		}

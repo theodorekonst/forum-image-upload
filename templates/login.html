@@ -11,8 +11,11 @@
             <section class="form-panel" aria-labelledby="login-heading">
                 <h1 id="login-heading">Log in</h1>
                 <form class="content-form" method="POST" action="/login">
+                    {{if .Error}}
+                    <p class="form-error">{{.Error}}</p>
+                    {{end}}
                     <label for="login-email">Email</label>
-                    <input id="login-email" type="email" name="email" required>
+                    <input id="login-email" type="email" name="email" value="{{.Email}}" required>
 
                     <label for="login-password">Password</label>
                     <input id="login-password" type="password" name="password" required>

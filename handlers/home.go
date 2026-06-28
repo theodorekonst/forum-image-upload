@@ -20,19 +20,24 @@ type homePageData struct {
 }
 
 type homePost struct {
-	ID         int64
-	Title      string
-	Author     string
-	CreatedAt  time.Time
-	Excerpt    string
-	Categories []string
-	Likes      int64
-	Dislikes   int64
+	ID           int64
+	Title        string
+	Author       string
+	CreatedAt    time.Time
+	Excerpt      string
+	Categories   []string
+	Likes        int64
+	Dislikes     int64
+	UserReaction string
 }
 
 // HomeHandler renders the public post feed and applies optional filters.
 func HomeHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			RenderError(w, http.StatusNotFound, "Page not found.")
+			return
+		}
 		if r.Method != http.MethodGet {
 			RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
 			return
@@ -55,7 +60,7 @@ func HomeHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		viewPosts, err := buildHomePosts(store, posts)
+		viewPosts, err := buildHomePosts(store, posts, user)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Could not prepare posts.")
 			return
@@ -112,7 +117,7 @@ func loadHomePosts(store *db.Store, r *http.Request, user *db.User) ([]*db.Post,
 	}
 }
 
-func buildHomePosts(store *db.Store, posts []*db.Post) ([]homePost, error) {
+func buildHomePosts(store *db.Store, posts []*db.Post, user *db.User) ([]homePost, error) {
 	viewPosts := make([]homePost, 0, len(posts))
 	for _, post := range posts {
 		author, err := store.GetUserByID(post.AuthorID)
@@ -127,16 +132,28 @@ func buildHomePosts(store *db.Store, posts []*db.Post) ([]homePost, error) {
 		if err != nil {
 			return nil, err
 		}
+		dislikes, err := store.CountPostDislikes(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		userReaction := ""
+		if user != nil {
+			userReaction, err = store.GetPostReaction(post.ID, user.ID)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		viewPosts = append(viewPosts, homePost{
-			ID:         post.ID,
-			Title:      post.Title,
-			Author:     author.Username,
-			CreatedAt:  post.CreatedAt,
-			Excerpt:    excerpt(post.Content),
-			Categories: categories,
-			Likes:      likes,
-			Dislikes:   0,
+			ID:           post.ID,
+			Title:        post.Title,
+			Author:       author.Username,
+			CreatedAt:    post.CreatedAt,
+			Excerpt:      excerpt(post.Content),
+			Categories:   categories,
+			Likes:        likes,
+			Dislikes:     dislikes,
+			UserReaction: userReaction,
 		})
 	}
 	return viewPosts, nil

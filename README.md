@@ -1,134 +1,38 @@
-# Member 4 — Likes, Filters, Frontend & Delivery
+# Member 4 - Frontend, Reactions, Filters, and Delivery
 
-This document tracks my scope of the forum project: the user-facing layer
-(HTML templates + CSS), the like/dislike system, the post filters, error
-handling, Docker, and testing. It also serves as a running checklist so the
-team can see what is done and what is pending.
+## Responsibilities
 
-## Scope
+| Area | Member 4 responsibility |
+|---|---|
+| Frontend | HTML templates, shared CSS, logo assets, and responsive layout |
+| Home page | Public feed, category navigation, user-specific filters, and UI states |
+| Reactions | Like/dislike behavior for posts and comments |
+| Errors | Shared error page and handler integration for 400, 401, 403, 404, and 500 |
+| Delivery | Dockerfile, tests, final integration, and release verification |
 
-| Area | Responsibility |
-|------|----------------|
-| Frontend | All HTML templates and CSS styling |
-| Likes/Dislikes | Like & dislike buttons for posts and comments |
-| Filters | Filter posts by category, by my posts, by liked posts |
-| Error pages | 400, 401, 403, 404, 500 |
-| Delivery | Dockerfile, optional docker-compose, tests, final integration |
+## Work Completed
 
-## Dependencies
+- Built shared forum styling, logo integration, filter-panel toggle, and post reaction controls.
+- Added public home-page rendering with category, my-posts, and liked-posts filters.
+- Added template rendering helpers and template parsing tests.
+- Integrated shared styling into home, login, register, post-detail, and create-post pages.
+- Added shared error page helper and tests.
+- Integrated static asset serving and corrected normal page rendering for login and registration.
+- Merged post/comment work and resolved template-loading integration.
+- Implemented full like/dislike reaction system for posts and comments (schema, endpoints, toggle logic, UI).
+- Added inline form error messages for register and login (no more blank error pages).
+- Added 404 handling for unknown routes.
+- Added Dockerfile with multi-stage build for containerized deployment.
+- Fixed post detail page navigation to be auth-aware (login/logout based on session).
 
-This work builds on top of the other members' branches:
+## Member 4 Files
 
-- **Member 1 (Database & Backend Core):** tables (`users`, `posts`, `comments`,
-  `categories`, `post_categories`, `post_likes`, `comment_likes`, `sessions`),
-  schema, and the repository/CRUD layer.
-- **Member 2 (Auth & Sessions):** registration, login, logout, session cookies,
-  password hashing, and `RequireAuth()` middleware that tells the frontend
-  whether a user is logged in.
-- **Member 3 (Posts, Comments & Categories):** create/view post routes,
-  comment creation, category management, and post detail data.
-
-The frontend consumes data these layers produce; the like/filter handlers
-read from and write to Member 1's tables and rely on Member 2's session info
-to know *who* the current user is.
-
-## Templates
-
-Located in `templates/`. Built with Go's `html/template` (no frontend
-frameworks, per the project rules).
-
-| Template | Purpose |
-|----------|---------|
-| `home.html` | Landing page: lists all posts, shows like/dislike counts and filters |
-| `login.html` | Login form (email + password) → `POST /login` |
-| `register.html` | Register form (email + username + password) → `POST /register` |
-| `post.html` | Single post detail with comments and like/dislike controls |
-| `profile.html` | Logged-in user's profile (their posts / liked posts) |
-| `error.html` | Generic error page reused for all HTTP error codes |
-
-## Static files
-
-Located in `static/`:
-
-- `static/css/style.css` — site styling (layout, spacing, form/button styles)
-- `static/images/` — any icons or images used by the UI
-
-## Likes & Dislikes
-
-Routes handled in `handlers/likes.go`:
-
-- `POST /post/like`
-- `POST /comment/like`
-
-Rules:
-
-- Only registered (logged-in) users can like/dislike — enforced via auth
-  middleware before the handler runs.
-- Like and dislike counts are visible to everyone, including guests.
-- A user can have at most one reaction per post/comment.
-
-## Filters
-
-Routes/logic handled in `handlers/filters.go`:
-
-- **By category** — e.g. Programming, Sports, Gaming, Movies (works for everyone).
-- **My posts** — posts created by the logged-in user (registered users only).
-- **Liked posts** — posts the logged-in user has liked (registered users only).
-
-The last two require a session, since they refer to the currently logged-in
-user.
-
-## Error handling
-
-A single `error.html` template is reused for all error responses, with the
-correct HTTP status code set by the handler:
-
-- `400` Bad Request
-- `401` Unauthorized
-- `403` Forbidden
-- `404` Not Found
-- `500` Internal Server Error
-
-## Docker
-
-- `Dockerfile` — builds and runs the forum container.
-- `docker-compose.yml` — optional, for convenience.
-- Note: `mattn/go-sqlite3` uses CGO, so the build needs a C toolchain
-  available at compile time (this affects how the Dockerfile is written).
-
-## Testing
-
-- `go test ./...`
-- Test files live next to the code they test, using the `*_test.go` convention.
-
-## Progress checklist
-
-### Phase 1 — Scaffolding
-- [x] Folder structure (`templates/`, `static/css/`, `static/images/`)
-- [x] Merge Member 1 & Member 2 branches into this branch
-- [x] `templates/login.html` (basic structure)
-- [x] `templates/register.html` (basic structure)
-- [ ] Placeholder `handlers/likes.go`
-- [ ] Placeholder `handlers/filters.go`
-
-### Phase 2 — Core pages & styling
-- [ ] `templates/home.html`
-- [ ] `static/css/style.css` (base styling)
-- [ ] Wire login/register forms to their routes (verify end-to-end)
-
-### Phase 3 — Likes & errors
-- [ ] Like/dislike for posts
-- [ ] Like/dislike for comments
-- [ ] `templates/error.html`
-- [ ] Error responses for 400/401/403/404/500
-
-### Phase 4 — Filters & delivery
-- [ ] Category filter
-- [ ] My posts filter
-- [ ] Liked posts filter
-- [ ] `Dockerfile`
-- [ ] Tests for likes & filters
-- [ ] Final front-end polish
-
-### Phase 5 — Integration
-- [ ] Full team integration & delivery checklist verified
+- `templates/` — home, login, register, post detail, create post, and error UI
+- `static/css/style.css` — shared site styling
+- `static/images/` — forum logo assets
+- `static/js/filters-toggle.js` — filter-panel UI behavior
+- `handlers/home.go` — public home feed and filters
+- `handlers/errors.go` — shared error renderer
+- `handlers/templates.go` — common template rendering helper
+- `handlers/reactions.go` — like/dislike handlers for posts and comments
+- `Dockerfile` — multi-stage Docker build

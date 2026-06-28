@@ -11,11 +11,14 @@
             <section class="form-panel" aria-labelledby="register-heading">
                 <h1 id="register-heading">Register</h1>
                 <form class="content-form" method="POST" action="/register">
+                    {{if .Error}}
+                    <p class="form-error">{{.Error}}</p>
+                    {{end}}
                     <label for="register-email">Email</label>
-                    <input id="register-email" type="email" name="email" required>
+                    <input id="register-email" type="email" name="email" value="{{.Email}}" required>
 
                     <label for="register-username">Username</label>
-                    <input id="register-username" type="text" name="username" required>
+                    <input id="register-username" type="text" name="username" value="{{.Username}}" required>
 
                     <label for="register-password">Password</label>
                     <input id="register-password" type="password" name="password" required>

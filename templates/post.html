@@ -13,16 +13,64 @@
             <img class="logo-hover" src="/static/images/Logo%20Full%20Orange.svg" alt="">
         </a>
         <div class="nav-links">
+            {{if .User}}
+            <a href="/post/create">Create post</a>
+            <form class="logout-form" method="POST" action="/logout">
+                <button type="submit">Logout</button>
+            </form>
+            {{else}}
             <a href="/login">Login</a>
             <a href="/register">Register</a>
+            {{end}}
         </div>
     </nav>
 
     <main class="content-page">
         <article class="post-detail">
-            <p class="post-meta">Posted on <time>{{.Post.CreatedAt.Format "January 2, 2006"}}</time></p>
+            <p class="post-meta">Posted by <strong>{{.PostAuthor}}</strong> on <time>{{.Post.CreatedAt.Format "January 2, 2006"}}</time></p>
             <h1>{{.Post.Title}}</h1>
             <p class="post-body">{{.Post.Content}}</p>
+            <div class="reaction-row" aria-label="Post reactions">
+                {{if .User}}
+                <form method="POST" action="/post/react">
+                    <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                    <input type="hidden" name="reaction_type" value="like">
+                    <button class="reaction-button{{if eq .PostUserReaction "like"}} is-active{{end}}" type="submit" aria-label="Like post">
+                        <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3v11z"></path>
+                            <path d="M7 11l4.8-8.2A2 2 0 0 1 15.5 4v5h3.7a2 2 0 0 1 2 2.3l-1.2 7A4 4 0 0 1 16 22H7V11z"></path>
+                        </svg>
+                        <span class="reaction-count">{{.PostLikes}}</span>
+                    </button>
+                </form>
+                <form method="POST" action="/post/react">
+                    <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                    <input type="hidden" name="reaction_type" value="dislike">
+                    <button class="reaction-button{{if eq .PostUserReaction "dislike"}} is-active{{end}}" type="submit" aria-label="Dislike post">
+                        <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                            <path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3V2z"></path>
+                            <path d="M17 13l-4.8 8.2A2 2 0 0 1 8.5 20v-5H4.8a2 2 0 0 1-2-2.3l1.2-7A4 4 0 0 1 8 2h9v11z"></path>
+                        </svg>
+                        <span class="reaction-count">{{.PostDislikes}}</span>
+                    </button>
+                </form>
+                {{else}}
+                <button class="reaction-button" type="button" aria-label="Like post">
+                    <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3v11z"></path>
+                        <path d="M7 11l4.8-8.2A2 2 0 0 1 15.5 4v5h3.7a2 2 0 0 1 2 2.3l-1.2 7A4 4 0 0 1 16 22H7V11z"></path>
+                    </svg>
+                    <span class="reaction-count">{{.PostLikes}}</span>
+                </button>
+                <button class="reaction-button" type="button" aria-label="Dislike post">
+                    <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3V2z"></path>
+                        <path d="M17 13l-4.8 8.2A2 2 0 0 1 8.5 20v-5H4.8a2 2 0 0 1-2-2.3l1.2-7A4 4 0 0 1 8 2h9v11z"></path>
+                    </svg>
+                    <span class="reaction-count">{{.PostDislikes}}</span>
+                </button>
+                {{end}}
+            </div>
         </article>
 
         <section class="comments-section" aria-labelledby="comments-heading">
@@ -31,8 +79,51 @@
                 <div class="comment-list">
                     {{range .Comments}}
                     <article class="comment-card">
+                        <p class="post-meta">By <strong>{{.Author}}</strong> on <time>{{.CreatedAt.Format "January 2, 2006"}}</time></p>
                         <p>{{.Content}}</p>
-                        <time>{{.CreatedAt.Format "January 2, 2006"}}</time>
+                        <div class="reaction-row" aria-label="Comment reactions">
+                            {{if $.User}}
+                            <form method="POST" action="/comment/react">
+                                <input type="hidden" name="comment_id" value="{{.ID}}">
+                                <input type="hidden" name="post_id" value="{{$.Post.ID}}">
+                                <input type="hidden" name="reaction_type" value="like">
+                                <button class="reaction-button{{if eq .UserReaction "like"}} is-active{{end}}" type="submit" aria-label="Like comment">
+                                    <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                                        <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3v11z"></path>
+                                        <path d="M7 11l4.8-8.2A2 2 0 0 1 15.5 4v5h3.7a2 2 0 0 1 2 2.3l-1.2 7A4 4 0 0 1 16 22H7V11z"></path>
+                                    </svg>
+                                    <span class="reaction-count">{{.Likes}}</span>
+                                </button>
+                            </form>
+                            <form method="POST" action="/comment/react">
+                                <input type="hidden" name="comment_id" value="{{.ID}}">
+                                <input type="hidden" name="post_id" value="{{$.Post.ID}}">
+                                <input type="hidden" name="reaction_type" value="dislike">
+                                <button class="reaction-button{{if eq .UserReaction "dislike"}} is-active{{end}}" type="submit" aria-label="Dislike comment">
+                                    <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                                        <path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3V2z"></path>
+                                        <path d="M17 13l-4.8 8.2A2 2 0 0 1 8.5 20v-5H4.8a2 2 0 0 1-2-2.3l1.2-7A4 4 0 0 1 8 2h9v11z"></path>
+                                    </svg>
+                                    <span class="reaction-count">{{.Dislikes}}</span>
+                                </button>
+                            </form>
+                            {{else}}
+                            <button class="reaction-button" type="button" aria-label="Like comment">
+                                <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                                    <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3v11z"></path>
+                                    <path d="M7 11l4.8-8.2A2 2 0 0 1 15.5 4v5h3.7a2 2 0 0 1 2 2.3l-1.2 7A4 4 0 0 1 16 22H7V11z"></path>
+                                </svg>
+                                <span class="reaction-count">{{.Likes}}</span>
+                            </button>
+                            <button class="reaction-button" type="button" aria-label="Dislike comment">
+                                <svg class="reaction-icon" aria-hidden="true" viewBox="0 0 24 24">
+                                    <path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3V2z"></path>
+                                    <path d="M17 13l-4.8 8.2A2 2 0 0 1 8.5 20v-5H4.8a2 2 0 0 1-2-2.3l1.2-7A4 4 0 0 1 8 2h9v11z"></path>
+                                </svg>
+                                <span class="reaction-count">{{.Dislikes}}</span>
+                            </button>
+                            {{end}}
+                        </div>
                     </article>
                     {{end}}
                 </div>

@@ -32,48 +32,52 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			username := r.FormValue("username")
 			password := r.FormValue("password")
 
-			// 2. Validate input
-			// Basic empty check
-			if email == "" || username == "" || password == "" {
-				http.Error(w, "please fill all fields", http.StatusBadRequest)
-				return
-			}
-			// Email format check
-			if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
-				http.Error(w, "invalid email format", http.StatusBadRequest)
-				return
-			}
-			// Username: 3–20 chars, letters/numbers/underscore
-			usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
-			if !usernameRegex.MatchString(username) {
-				http.Error(w, "username must be 3-20 characters and may include letters, numbers and underscore", http.StatusBadRequest)
-				return
-			}
-			// Password: 8–72 chars, uppercase, lowercase, digit, special character
-			if len(password) < 8 || len(password) > 72 {
-				http.Error(w, "password must be between 8 and 72 characters", http.StatusBadRequest)
-				return
+			registerError := func(msg string) {
+				w.WriteHeader(http.StatusBadRequest)
+				renderPage(w, "register.html", map[string]any{
+					"Error":    msg,
+					"Email":    email,
+					"Username": username,
+				})
 			}
 
+			// 2. Validate input
+			if email == "" || username == "" || password == "" {
+				registerError("Please fill all fields.")
+				return
+			}
+			if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
+				registerError("Invalid email format.")
+				return
+			}
+			usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
+			if !usernameRegex.MatchString(username) {
+				registerError("Username must be 3–20 characters: letters, numbers, underscore only.")
+				return
+			}
+			if len(password) < 8 || len(password) > 72 {
+				registerError("Password must be between 8 and 72 characters.")
+				return
+			}
 			if !regexp.MustCompile(`[A-Z]`).MatchString(password) ||
 				!regexp.MustCompile(`[a-z]`).MatchString(password) ||
 				!regexp.MustCompile(`[0-9]`).MatchString(password) ||
 				!regexp.MustCompile(`[^a-zA-Z0-9]`).MatchString(password) {
-				http.Error(w, "password must include uppercase, lowercase, number and special character", http.StatusBadRequest)
+				registerError("Password must include uppercase, lowercase, number and special character.")
 				return
 			}
 
 			// 3. Check if email exists
 			_, err := store.GetUserByEmail(email)
 			if err == nil {
-				http.Error(w, "email already in use", http.StatusBadRequest)
+				registerError("This email is already in use.")
 				return
 			}
 
 			// 4. Check if username exists
 			_, err = store.GetUserByUsername(username)
 			if err == nil {
-				http.Error(w, "username already exists", http.StatusBadRequest)
+				registerError("This username is already taken.")
 				return
 			}
 
@@ -81,7 +85,7 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 			if err != nil {
 				log.Println("error hashing password:", err)
-				http.Error(w, "internal server error", http.StatusInternalServerError)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
 
@@ -89,7 +93,7 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			_, err = store.CreateUser(email, username, string(hash))
 			if err != nil {
 				log.Println("error creating user:", err)
-				http.Error(w, "internal server error", http.StatusInternalServerError)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
 
@@ -98,8 +102,7 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Unsupported method
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
 	}
 }
 
@@ -122,23 +125,31 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			email := r.FormValue("email")
 			password := r.FormValue("password")
 
+			loginError := func(msg string) {
+				w.WriteHeader(http.StatusUnauthorized)
+				renderPage(w, "login.html", map[string]any{
+					"Error": msg,
+					"Email": email,
+				})
+			}
+
 			// 2. Basic empty check
 			if email == "" || password == "" {
-				http.Error(w, "please fill all fields", http.StatusBadRequest)
+				loginError("Please fill all fields.")
 				return
 			}
 
-			// 3. Verify email exists (err != nil means user not found by the way)
+			// 3. Verify email exists
 			user, err := store.GetUserByEmail(email)
 			if err != nil {
-				http.Error(w, "invalid credentials", http.StatusUnauthorized)
+				loginError("Invalid email or password.")
 				return
 			}
 
 			// 4. Verify password matches stored hash
 			err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 			if err != nil {
-				http.Error(w, "invalid credentials", http.StatusUnauthorized)
+				loginError("Invalid email or password.")
 				return
 			}
 
@@ -176,8 +187,7 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Unsupported method
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
 	}
 }
 
