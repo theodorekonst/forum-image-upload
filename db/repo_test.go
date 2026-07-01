@@ -81,9 +81,9 @@ func TestStoreCRUD(t *testing.T) {
 		t.Fatalf("expected 1 comment got %d", len(comments))
 	}
 
-	// Likes
-	if _, err := store.AddLikeToPost(postID, userID); err != nil {
-		t.Fatalf("AddLikeToPost: %v", err)
+	// Post reactions
+	if err := store.SetPostReaction(postID, userID, "like"); err != nil {
+		t.Fatalf("SetPostReaction like: %v", err)
 	}
 	count, err := store.CountPostLikes(postID)
 	if err != nil {
@@ -91,6 +91,37 @@ func TestStoreCRUD(t *testing.T) {
 	}
 	if count != 1 {
 		t.Fatalf("expected 1 like got %d", count)
+	}
+
+	// Switch to dislike
+	if err := store.SetPostReaction(postID, userID, "dislike"); err != nil {
+		t.Fatalf("SetPostReaction dislike: %v", err)
+	}
+	count, err = store.CountPostLikes(postID)
+	if err != nil {
+		t.Fatalf("CountPostLikes after switch: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("expected 0 likes after switch got %d", count)
+	}
+	dislikes, err := store.CountPostDislikes(postID)
+	if err != nil {
+		t.Fatalf("CountPostDislikes: %v", err)
+	}
+	if dislikes != 1 {
+		t.Fatalf("expected 1 dislike got %d", dislikes)
+	}
+
+	// Remove reaction (toggle off)
+	if err := store.RemovePostReaction(postID, userID); err != nil {
+		t.Fatalf("RemovePostReaction: %v", err)
+	}
+	dislikes, err = store.CountPostDislikes(postID)
+	if err != nil {
+		t.Fatalf("CountPostDislikes after remove: %v", err)
+	}
+	if dislikes != 0 {
+		t.Fatalf("expected 0 dislikes after remove got %d", dislikes)
 	}
 
 	// Sessions
