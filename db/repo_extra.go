@@ -5,6 +5,17 @@ import (
 	"errors"
 )
 
+func (s *Store) CreateCommentWithParent(postID, authorID int64, parentID *int64, content string) (int64, error) {
+	result, err := s.DB.Exec(
+		`INSERT INTO comments (post_id, author_id, parent_id, content) VALUES (?, ?, ?, ?)`,
+		postID, authorID, parentID, content,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
 // DeleteSession removes a session by its token and returns ErrNotFound if nothing was deleted.
 func (s *Store) DeleteSession(token string) error {
 
@@ -118,6 +129,14 @@ func (s *Store) CountCommentDislikes(commentID int64) (int64, error) {
 	return count, nil
 }
 
+func (s *Store) CountCommentsByPost(postID int64) (int64, error) {
+	var count int64
+	if err := s.DB.QueryRow(`SELECT COUNT(*) FROM comments WHERE post_id = ?`, postID).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (s *Store) ListPostsByCategory(categoryID int64, limit, offset int) ([]*Post, error) {
 	rows, err := s.DB.Query(`SELECT p.id, p.author_id, p.title, p.content, p.created_at FROM posts p JOIN post_categories pc ON p.id = pc.post_id WHERE pc.category_id = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?`, categoryID, limit, offset)
 	if err != nil {
@@ -173,7 +192,7 @@ func (s *Store) ListPostsByAuthor(authorID int64, limit, offset int) ([]*Post, e
 }
 
 func (s *Store) ListLikedPosts(userID int64, limit, offset int) ([]*Post, error) {
-	rows, err := s.DB.Query(`SELECT p.id, p.author_id, p.title, p.content, p.created_at FROM posts p JOIN post_likes pl ON p.id = pl.post_id WHERE pl.user_id = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?`, userID, limit, offset)
+	rows, err := s.DB.Query(`SELECT p.id, p.author_id, p.title, p.content, p.created_at FROM posts p JOIN post_likes pl ON p.id = pl.post_id WHERE pl.user_id = ? AND pl.reaction_type = 'like' ORDER BY p.created_at DESC LIMIT ? OFFSET ?`, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}

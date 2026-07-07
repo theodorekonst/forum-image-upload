@@ -48,7 +48,11 @@ func PostReactHandler(store *db.Store) http.HandlerFunc {
 			}
 		}
 
-		http.Redirect(w, r, "/post?id="+postIDStr, http.StatusSeeOther)
+		redirect := r.Referer()
+		if redirect == "" {
+			redirect = "/post?id=" + postIDStr
+		}
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
 	}
 }
 

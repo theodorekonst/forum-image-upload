@@ -5,14 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Post</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body>
     <nav class="site-nav">
         <a class="site-logo" href="/">
-            <img class="logo-default" src="/static/images/Logo%20Full%20White.svg" alt="Forum home">
-            <img class="logo-hover" src="/static/images/Logo%20Full%20Orange.svg" alt="">
+            <img src="/static/images/Logo%20Full%20Orange.svg" alt="Forum home">
         </a>
         <div class="nav-links">
             <a href="/">Home</a>
@@ -21,7 +23,7 @@
 
     <main class="content-page">
         <section class="form-panel" aria-labelledby="create-post-heading">
-            <h1 id="create-post-heading">Create post</h1>
+            <h1 id="create-post-heading" class="sr-only">Create post</h1>
             <form class="content-form" method="POST" action="/post/create">
                 <label for="post-title">Title</label>
                 <input id="post-title" type="text" name="title" required>

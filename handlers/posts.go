@@ -66,6 +66,7 @@ type viewComment struct {
 	Likes        int64
 	Dislikes     int64
 	UserReaction string
+	Replies      []viewComment
 }
 
 type postPageData struct {
@@ -76,6 +77,7 @@ type postPageData struct {
 	PostDislikes     int64
 	PostUserReaction string
 	Comments         []viewComment
+	ScrollTo         string
 }
 
 func ViewPostHandler(store *db.Store) http.HandlerFunc {
@@ -126,7 +128,8 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		comments := make([]viewComment, 0, len(rawComments))
+		// Build a flat map of all view comments first
+		vcMap := make(map[int64]viewComment, len(rawComments))
 		for _, c := range rawComments {
 			commentAuthor, err := store.GetUserByID(c.AuthorID)
 			if err != nil {
@@ -151,7 +154,7 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 					return
 				}
 			}
-			comments = append(comments, viewComment{
+			vcMap[c.ID] = viewComment{
 				ID:           c.ID,
 				Author:       commentAuthor.Username,
 				Content:      c.Content,
@@ -159,7 +162,30 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 				Likes:        likes,
 				Dislikes:     dislikes,
 				UserReaction: userReaction,
-			})
+			}
+		}
+
+		// Attach replies to their parent, collect top-level comments in order
+		var comments []viewComment
+		for _, c := range rawComments {
+			if c.ParentID != nil {
+				continue // handled as reply
+			}
+			vc := vcMap[c.ID]
+			for _, r := range rawComments {
+				if r.ParentID != nil && *r.ParentID == c.ID {
+					vc.Replies = append(vc.Replies, vcMap[r.ID])
+				}
+			}
+			comments = append(comments, vc)
+		}
+
+		// Accept only "comment-{digits}" to prevent reflected XSS via the scroll param.
+		scrollTo := ""
+		if raw := r.URL.Query().Get("scroll"); len(raw) > 8 && raw[:8] == "comment-" {
+			if _, err := strconv.ParseInt(raw[8:], 10, 64); err == nil {
+				scrollTo = raw
+			}
 		}
 
 		if err := renderPage(w, "post.html", postPageData{
@@ -170,6 +196,7 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 			PostDislikes:     postDislikes,
 			PostUserReaction: postUserReaction,
 			Comments:         comments,
+			ScrollTo:         scrollTo,
 		}); err != nil {
 			RenderError(w, http.StatusInternalServerError, "Could not render the post page.")
 		}

@@ -29,6 +29,7 @@ type homePost struct {
 	Likes        int64
 	Dislikes     int64
 	UserReaction string
+	CommentCount int64
 }
 
 // HomeHandler renders the public post feed and applies optional filters.
@@ -144,6 +145,11 @@ func buildHomePosts(store *db.Store, posts []*db.Post, user *db.User) ([]homePos
 			}
 		}
 
+		commentCount, err := store.CountCommentsByPost(post.ID)
+		if err != nil {
+			return nil, err
+		}
+
 		viewPosts = append(viewPosts, homePost{
 			ID:           post.ID,
 			Title:        post.Title,
@@ -154,13 +160,14 @@ func buildHomePosts(store *db.Store, posts []*db.Post, user *db.User) ([]homePos
 			Likes:        likes,
 			Dislikes:     dislikes,
 			UserReaction: userReaction,
+			CommentCount: commentCount,
 		})
 	}
 	return viewPosts, nil
 }
 
 func excerpt(content string) string {
-	const maxLength = 180
+	const maxLength = 420
 	content = strings.TrimSpace(content)
 	runes := []rune(content)
 	if len(runes) <= maxLength {

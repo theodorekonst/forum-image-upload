@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -47,5 +48,16 @@ func migrate(conn *sql.DB) error {
 	if _, err := conn.Exec(string(data)); err != nil {
 		return fmt.Errorf("execute schema migration: %w", err)
 	}
+	if err := addColumnIfMissing(conn, "comments", "parent_id", "INTEGER REFERENCES comments(id) ON DELETE SET NULL"); err != nil {
+		return err
+	}
 	return nil
+}
+
+func addColumnIfMissing(conn *sql.DB, table, column, def string) error {
+	_, err := conn.Exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", table, column, def))
+	if err != nil && strings.Contains(err.Error(), "duplicate column name") {
+		return nil
+	}
+	return err
 }
