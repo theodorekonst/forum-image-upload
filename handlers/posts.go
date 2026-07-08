@@ -73,6 +73,7 @@ type postPageData struct {
 	User             *db.User
 	Post             *db.Post
 	PostAuthor       string
+	PostCategories   []string
 	PostLikes        int64
 	PostDislikes     int64
 	PostUserReaction string
@@ -100,6 +101,12 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 		postAuthor, err := store.GetUserByID(post.AuthorID)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Could not load post author.")
+			return
+		}
+
+		postCategories, err := store.ListCategoriesByPost(post.ID)
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load post categories.")
 			return
 		}
 
@@ -192,6 +199,7 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 			User:             user,
 			Post:             post,
 			PostAuthor:       postAuthor.Username,
+			PostCategories:   postCategories,
 			PostLikes:        postLikes,
 			PostDislikes:     postDislikes,
 			PostUserReaction: postUserReaction,

@@ -113,7 +113,7 @@ button:disabled {
 
 .site-logo img {
     display: block;
-    height: 2.25rem;
+    height: 2.75rem;
     object-fit: contain;
     transition: filter 0.2s ease;
     width: auto;
@@ -340,6 +340,7 @@ button:disabled {
     letter-spacing: -0.025em;
     line-height: 1.28;
     margin-bottom: 0.45rem;
+    overflow-wrap: break-word;
     text-wrap: balance;
 }
 
@@ -367,6 +368,7 @@ button:disabled {
     color: rgba(229, 231, 235, 0.46);
     font-size: 0.875rem;
     line-height: 1.7;
+    overflow-wrap: break-word;
 }
 
 .category-badge {
@@ -581,22 +583,40 @@ button:disabled {
     align-items: center;
     color: var(--muted);
     display: inline-flex;
-    font-size: 0.69rem;
-    font-weight: 400;
-    gap: 0.25rem;
-    opacity: 0.6;
+    font-size: 0.68rem;
+    font-weight: 500;
+    gap: 0.3rem;
 }
 
 .byline-category::before {
-    background-color: var(--accent);
+    background-color: var(--muted);
     border-radius: 50%;
     content: '';
     display: inline-block;
     flex-shrink: 0;
     height: 5px;
-    opacity: 0.7;
     width: 5px;
 }
+
+/* Per-category colors */
+.byline-category[data-cat="General"]   { color: #4ade80; }
+.byline-category[data-cat="Tech"]      { color: #60a5fa; }
+.byline-category[data-cat="Design"]    { color: #c084fc; }
+.byline-category[data-cat="Career"]    { color: #fbbf24; }
+.byline-category[data-cat="Off-topic"] { color: #f472b6; }
+
+.byline-category[data-cat="General"]::before   { background-color: #4ade80; box-shadow: 0 0 5px 1px rgba(74,222,128,0.6); }
+.byline-category[data-cat="Tech"]::before      { background-color: #60a5fa; box-shadow: 0 0 5px 1px rgba(96,165,250,0.6); }
+.byline-category[data-cat="Design"]::before    { background-color: #c084fc; box-shadow: 0 0 5px 1px rgba(192,132,252,0.6); }
+.byline-category[data-cat="Career"]::before    { background-color: #fbbf24; box-shadow: 0 0 5px 1px rgba(251,191,36,0.6); }
+.byline-category[data-cat="Off-topic"]::before { background-color: #f472b6; box-shadow: 0 0 5px 1px rgba(244,114,182,0.6); }
+
+/* Sidebar category icon colors with subtle glow */
+.sidebar-link[data-cat="General"] .sidebar-icon   { color: #4ade80; filter: drop-shadow(0 0 3px rgba(74,222,128,0.45)); }
+.sidebar-link[data-cat="Tech"] .sidebar-icon      { color: #60a5fa; filter: drop-shadow(0 0 3px rgba(96,165,250,0.45)); }
+.sidebar-link[data-cat="Design"] .sidebar-icon    { color: #c084fc; filter: drop-shadow(0 0 3px rgba(192,132,252,0.45)); }
+.sidebar-link[data-cat="Career"] .sidebar-icon    { color: #fbbf24; filter: drop-shadow(0 0 3px rgba(251,191,36,0.45)); }
+.sidebar-link[data-cat="Off-topic"] .sidebar-icon { color: #f472b6; filter: drop-shadow(0 0 3px rgba(244,114,182,0.45)); }
 
 
 .post-detail h1 {
@@ -607,6 +627,7 @@ button:disabled {
     line-height: 1.25;
     margin-bottom: 0.75rem;
     max-width: 70ch;
+    overflow-wrap: break-word;
     text-wrap: balance;
 }
 
@@ -633,6 +654,7 @@ button:disabled {
     color: var(--text);
     font-size: 1.05rem;
     line-height: 1.8;
+    overflow-wrap: break-word;
     white-space: pre-wrap;
 }
 

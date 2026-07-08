@@ -44,6 +44,8 @@
                 <strong class="post-author">{{.PostAuthor}}</strong>
                 <span class="byline-dot" aria-hidden="true">·</span>
                 <time class="post-date" datetime="{{.Post.CreatedAt.UTC.Format "2006-01-02T15:04:05Z"}}">{{.Post.CreatedAt.Format "January 2, 2006"}}</time>
+                {{if .PostCategories}}<span class="byline-dot" aria-hidden="true">·</span>{{end}}
+                {{range .PostCategories}}<span class="byline-category" data-cat="{{.}}">{{.}}</span>{{end}}
             </div>
             <h1>{{.Post.Title}}</h1>
             <p class="post-body">{{.Post.Content}}</p>
