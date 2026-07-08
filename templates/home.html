@@ -65,6 +65,20 @@
         {{end}}
     </aside>
 
+    <nav class="mobile-filter-bar" aria-label="Filter posts">
+        <a class="mfb-link {{if eq .ActiveFilter "all"}}is-active{{end}}" href="/">All posts</a>
+        {{if .User}}
+        <a class="mfb-link {{if eq .ActiveFilter "mine"}}is-active{{end}}" href="/?filter=mine">My posts</a>
+        <a class="mfb-link {{if eq .ActiveFilter "liked"}}is-active{{end}}" href="/?filter=liked">Liked</a>
+        {{end}}
+        {{if .Categories}}
+        <span class="mfb-divider" aria-hidden="true"></span>
+        {{range .Categories}}
+        <a class="mfb-link {{if eq $.ActiveCategory .Name}}is-active{{end}}" href="/?category={{urlquery .Name}}" data-cat="{{.Name}}">{{.Name}}</a>
+        {{end}}
+        {{end}}
+    </nav>
+
     <div class="content-wrapper" id="content-wrapper">
     <main class="home-layout">
         <section class="post-list" aria-label="Posts">

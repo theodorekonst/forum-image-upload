@@ -840,22 +840,121 @@ button:disabled {
     color: var(--muted);
 }
 
+/* Mobile filter bar (hidden on desktop) */
+.mobile-filter-bar { display: none; }
+
 /* Small screens */
-@media (max-width: 760px) {
+@media (max-width: 768px) {
+    /* Navbar */
     .site-nav {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 1rem;
+        min-height: 3.5rem;
+        padding: 0 1rem;
     }
+
+    .site-logo {
+        margin-left: 0;
+    }
+
+    .site-logo img {
+        height: 2.25rem;
+    }
+
+    /* Hide sidebar, show filter bar */
+    .sidebar { display: none; }
 
     .content-wrapper,
     .content-wrapper.sidebar-closed {
         padding-left: 0;
     }
 
-    .sidebar {
-        z-index: 200;
+    /* Mobile filter bar */
+    .mobile-filter-bar {
+        align-items: center;
+        background-color: var(--card);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 0.4rem;
+        overflow-x: auto;
+        padding: 0.6rem 1rem;
+        position: sticky;
+        scrollbar-width: none;
+        top: 3.5rem;
+        z-index: 40;
+    }
+
+    .mobile-filter-bar::-webkit-scrollbar { display: none; }
+
+    .mfb-link {
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 9999px;
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 0.28rem 0.75rem;
+        transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+        white-space: nowrap;
+    }
+
+    .mfb-link:hover {
+        background-color: rgba(255,255,255,0.05);
+        color: var(--text);
+    }
+
+    .mfb-link.is-active {
+        background-color: rgba(232,89,12,0.1);
+        border-color: rgba(232,89,12,0.3);
+        color: var(--accent);
+        font-weight: 600;
+    }
+
+    .mfb-link[data-cat="General"].is-active   { color: #4ade80; background: rgba(74,222,128,0.1);   border-color: rgba(74,222,128,0.3); }
+    .mfb-link[data-cat="Tech"].is-active      { color: #60a5fa; background: rgba(96,165,250,0.1);   border-color: rgba(96,165,250,0.3); }
+    .mfb-link[data-cat="Design"].is-active    { color: #c084fc; background: rgba(192,132,252,0.1);  border-color: rgba(192,132,252,0.3); }
+    .mfb-link[data-cat="Career"].is-active    { color: #fbbf24; background: rgba(251,191,36,0.1);   border-color: rgba(251,191,36,0.3); }
+    .mfb-link[data-cat="Off-topic"].is-active { color: #f472b6; background: rgba(244,114,182,0.1);  border-color: rgba(244,114,182,0.3); }
+
+    .mfb-divider {
+        background-color: var(--border);
+        flex-shrink: 0;
+        height: 1rem;
+        margin: 0 0.15rem;
+        width: 1px;
+    }
+
+    /* Home layout */
+    .home-layout {
+        margin: 1.25rem auto 3rem;
+        padding: 0 0.875rem;
+    }
+
+    /* Post cards */
+    .post-card {
+        border-radius: 12px;
+        padding: 1rem 1.1rem;
+    }
+
+    /* Post detail page */
+    .content-page {
+        margin: 1.25rem auto 3rem;
+        max-width: 100%;
+        padding: 0 0.875rem;
+    }
+
+    .post-detail {
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+    }
+
+    .post-detail h1 {
+        font-size: 1.45rem;
+    }
+
+    .comment-form-section {
+        padding: 1rem 1.1rem;
+    }
+
+    .comment-card {
+        padding: 0.75rem 0.9rem;
     }
 
     .empty-state {
