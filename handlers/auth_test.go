@@ -61,9 +61,10 @@ func TestRegisterHandler_MissingFields(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/register", nil)
 	req.Form = url.Values{
-		"email":    {""},
-		"username": {""},
-		"password": {""},
+		"email":            {""},
+		"username":         {""},
+		"password":         {""},
+		"confirm_password": {""},
 	}
 	w := httptest.NewRecorder()
 
@@ -71,6 +72,31 @@ func TestRegisterHandler_MissingFields(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+// NEW TEST: confirm password mismatch
+func TestRegisterHandler_ConfirmPasswordMismatch(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+	conn, _ := db.InitializeDatabase(dbPath)
+	defer conn.Close()
+
+	store := db.NewStore(conn)
+
+	req := httptest.NewRequest("POST", "/register", nil)
+	req.Form = url.Values{
+		"email":            {"test@example.com"},
+		"username":         {"validuser"},
+		"password":         {"Password1!"},
+		"confirm_password": {"Different1!"},
+	}
+	w := httptest.NewRecorder()
+
+	RegisterHandler(store)(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for mismatched confirm password, got %d", w.Code)
 	}
 }
 
@@ -85,9 +111,10 @@ func TestRegisterHandler_InvalidEmail(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/register", nil)
 	req.Form = url.Values{
-		"email":    {"invalid"},
-		"username": {"validuser"},
-		"password": {"Password1!"},
+		"email":            {"invalid"},
+		"username":         {"validuser"},
+		"password":         {"Password1!"},
+		"confirm_password": {"Password1!"},
 	}
 	w := httptest.NewRecorder()
 
@@ -109,9 +136,10 @@ func TestRegisterHandler_InvalidUsername(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/register", nil)
 	req.Form = url.Values{
-		"email":    {"test@example.com"},
-		"username": {"!bad"},
-		"password": {"Password1!"},
+		"email":            {"test@example.com"},
+		"username":         {"!bad"},
+		"password":         {"Password1!"},
+		"confirm_password": {"Password1!"},
 	}
 	w := httptest.NewRecorder()
 
@@ -142,9 +170,10 @@ func TestRegisterHandler_InvalidPassword(t *testing.T) {
 	for _, pw := range badPasswords {
 		req := httptest.NewRequest("POST", "/register", nil)
 		req.Form = url.Values{
-			"email":    {"test@example.com"},
-			"username": {"validuser"},
-			"password": {pw},
+			"email":            {"test@example.com"},
+			"username":         {"validuser"},
+			"password":         {pw},
+			"confirm_password": {pw},
 		}
 		w := httptest.NewRecorder()
 
@@ -169,9 +198,10 @@ func TestRegisterHandler_EmailExists(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/register", nil)
 	req.Form = url.Values{
-		"email":    {"test@example.com"},
-		"username": {"newuser"},
-		"password": {"Password1!"},
+		"email":            {"test@example.com"},
+		"username":         {"newuser"},
+		"password":         {"Password1!"},
+		"confirm_password": {"Password1!"},
 	}
 	w := httptest.NewRecorder()
 
@@ -195,9 +225,10 @@ func TestRegisterHandler_UsernameExists(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/register", nil)
 	req.Form = url.Values{
-		"email":    {"new@example.com"},
-		"username": {"user1"},
-		"password": {"Password1!"},
+		"email":            {"new@example.com"},
+		"username":         {"user1"},
+		"password":         {"Password1!"},
+		"confirm_password": {"Password1!"},
 	}
 	w := httptest.NewRecorder()
 
@@ -208,7 +239,7 @@ func TestRegisterHandler_UsernameExists(t *testing.T) {
 	}
 }
 
-// TestRegisterHandler_Valid -> should create user and redirect to /login
+// UPDATED: TestRegisterHandler_Valid -> should create user and redirect to /
 func TestRegisterHandler_Valid(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "test.db")
@@ -219,9 +250,10 @@ func TestRegisterHandler_Valid(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/register", nil)
 	req.Form = url.Values{
-		"email":    {"new@example.com"},
-		"username": {"newuser"},
-		"password": {"Password1!"},
+		"email":            {"new@example.com"},
+		"username":         {"newuser"},
+		"password":         {"Password1!"},
+		"confirm_password": {"Password1!"},
 	}
 	w := httptest.NewRecorder()
 
@@ -229,6 +261,17 @@ func TestRegisterHandler_Valid(t *testing.T) {
 
 	if w.Code != http.StatusSeeOther {
 		t.Fatalf("expected 303, got %d", w.Code)
+	}
+
+	// Should redirect to home now
+	if w.Header().Get("Location") != "/" {
+		t.Fatalf("expected redirect to '/', got %s", w.Header().Get("Location"))
+	}
+
+	// Should set session cookie
+	cookies := w.Result().Cookies()
+	if len(cookies) == 0 {
+		t.Fatalf("expected session cookie")
 	}
 }
 
@@ -397,7 +440,7 @@ func TestLogoutHandler_Get(t *testing.T) {
 	}
 }
 
-// TestLogoutHandler_NoCookie -> should redirect to /login
+// UPDATED: TestLogoutHandler_NoCookie -> should redirect to /
 func TestLogoutHandler_NoCookie(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "test.db")
@@ -414,9 +457,13 @@ func TestLogoutHandler_NoCookie(t *testing.T) {
 	if w.Code != http.StatusSeeOther {
 		t.Fatalf("expected 303, got %d", w.Code)
 	}
+
+	if w.Header().Get("Location") != "/" {
+		t.Fatalf("expected redirect to '/', got %s", w.Header().Get("Location"))
+	}
 }
 
-// TestLogoutHandler_Valid -> should delete session, clear cookie, redirect to /login
+// UPDATED: TestLogoutHandler_Valid -> should delete session, clear cookie, redirect to /
 func TestLogoutHandler_Valid(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "test.db")
@@ -438,6 +485,10 @@ func TestLogoutHandler_Valid(t *testing.T) {
 
 	if w.Code != http.StatusSeeOther {
 		t.Fatalf("expected 303, got %d", w.Code)
+	}
+
+	if w.Header().Get("Location") != "/" {
+		t.Fatalf("expected redirect to '/', got %s", w.Header().Get("Location"))
 	}
 
 	// Session should be deleted
