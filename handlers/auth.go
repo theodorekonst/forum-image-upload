@@ -89,15 +89,35 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			}
 
 			// 6. Create user
-			_, err = store.CreateUser(email, username, string(hash))
+			newUserID, err := store.CreateUser(email, username, string(hash))
 			if err != nil {
 				log.Println("error creating user:", err)
 				http.Error(w, "internal server error", http.StatusInternalServerError)
 				return
 			}
 
-			// 7. Redirect to login
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			// 7. Auto-login after successful registration
+			token := uuid.New().String()
+			expiresAt := time.Now().Add(24 * time.Hour)
+
+			_, err = store.CreateSession(newUserID, token, expiresAt)
+			if err != nil {
+				log.Println("error creating session:", err)
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
+
+			http.SetCookie(w, &http.Cookie{
+				Name:     "session",
+				Value:    token,
+				Path:     "/",
+				Expires:  expiresAt,
+				HttpOnly: true,
+				SameSite: http.SameSiteStrictMode,
+			})
+
+			// Redirect to home
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
@@ -174,6 +194,7 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 
 			// 6. Redirect to home
 			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
 		}
 
 		// Unsupported method
@@ -197,7 +218,7 @@ func LogoutHandler(store *db.Store) http.HandlerFunc {
 			// 1. Read session cookie
 			cookie, err := r.Cookie("session")
 			if err != nil {
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
 
@@ -207,7 +228,7 @@ func LogoutHandler(store *db.Store) http.HandlerFunc {
 				log.Println("error deleting session", err)
 			}
 
-			// 3. Clear cookie in browser
+			// 3. Clear cookie
 			http.SetCookie(w, &http.Cookie{
 				Name:     "session",
 				Value:    "",
@@ -219,8 +240,9 @@ func LogoutHandler(store *db.Store) http.HandlerFunc {
 				SameSite: http.SameSiteStrictMode,
 			})
 
-			// 4. Redirect to login
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			// 4. Redirect to home
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
 		}
 
 		// Unsupported method
