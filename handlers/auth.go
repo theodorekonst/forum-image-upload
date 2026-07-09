@@ -34,11 +34,17 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			email := r.FormValue("email")
 			username := r.FormValue("username")
 			password := r.FormValue("password")
+			confirmPassword := r.FormValue("confirm_password")
 
 			// 2. Validate input
 			// Basic empty check
-			if email == "" || username == "" || password == "" {
-				http.Error(w, "please fill all fields", http.StatusBadRequest)
+			if email == "" || username == "" || password == "" || confirmPassword == "" {
+				http.Error(w, "empty field(s)", http.StatusBadRequest)
+				return
+			}
+			// Confirm password check
+			if password != confirmPassword {
+				http.Error(w, "passwords do not match", http.StatusBadRequest)
 				return
 			}
 			// Email format check
