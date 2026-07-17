@@ -765,19 +765,18 @@ button:disabled {
     flex-direction: column;
     justify-content: flex-start;
     min-height: 100vh;
-    padding-top: 5rem;
-    padding: 5rem 1rem 3rem;
+    padding: 3rem 1rem 2rem;
 }
 
 .auth-page .form-panel {
     margin: 0;
     max-width: 460px;
-    padding: 2rem 2.25rem 2.5rem;
+    padding: 1.5rem 2.25rem 2rem;
     width: 100%;
 }
 
 .auth-page .content-form {
-    gap: 0.6rem;
+    gap: 0.45rem;
 }
 
 .form-copy {
@@ -788,8 +787,8 @@ button:disabled {
 
 .auth-logo {
     display: block;
-    height: 62px;
-    margin: 0.25rem auto 1.25rem;
+    height: 56px;
+    margin: 0 auto 1rem;
     width: auto;
 }
 
