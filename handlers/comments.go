@@ -17,14 +17,14 @@ func CreateCommentHandler(store *db.Store) http.HandlerFunc {
 		user, _ := middleware.GetUserFromRequest(store, r)
 
 		postIDStr := r.FormValue("post_id")
-		content := strings.TrimSpace(r.FormValue("content"))
-		if content == "" {
-			RenderError(w, http.StatusBadRequest, "Comment text is required.")
-			return
-		}
 		postID, err := strconv.ParseInt(postIDStr, 10, 64)
 		if err != nil {
 			RenderError(w, http.StatusBadRequest, "Invalid post ID.")
+			return
+		}
+		content := strings.TrimSpace(r.FormValue("content"))
+		if content == "" {
+			http.Redirect(w, r, "/post?id="+strconv.FormatInt(postID, 10)+"&comment_error=required&scroll=comment-form", http.StatusSeeOther)
 			return
 		}
 		var parentID *int64

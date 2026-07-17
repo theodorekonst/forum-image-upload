@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"forum/db"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -9,6 +10,14 @@ import (
 )
 
 func TestCreatePostHandlerRejectsWhitespaceOnlyInput(t *testing.T) {
+	dir := t.TempDir()
+	conn, err := db.InitializeDatabase(dir + "/test.db")
+	if err != nil {
+		t.Fatalf("InitializeDatabase: %v", err)
+	}
+	defer conn.Close()
+	store := db.NewStore(conn)
+
 	form := url.Values{
 		"title":   {"   \t"},
 		"content": {"\n   "},
@@ -17,10 +26,13 @@ func TestCreatePostHandlerRejectsWhitespaceOnlyInput(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 
-	CreatePostHandler(nil)(w, req)
+	CreatePostHandler(store)(w, req)
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for whitespace-only post, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "Title and content cannot be empty.") {
+		t.Fatalf("expected inline validation error")
 	}
 }
 
@@ -35,7 +47,10 @@ func TestCreateCommentHandlerRejectsWhitespaceOnlyInput(t *testing.T) {
 
 	CreateCommentHandler(nil)(w, req)
 
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400 for whitespace-only comment, got %d", w.Code)
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("expected redirect for whitespace-only comment, got %d", w.Code)
+	}
+	if location := w.Header().Get("Location"); location != "/post?id=1&comment_error=required&scroll=comment-form" {
+		t.Fatalf("unexpected redirect location: %s", location)
 	}
 }

@@ -32,7 +32,21 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 			content := strings.TrimSpace(r.FormValue("content"))
 			categoryIDs := r.Form["categories"]
 			if title == "" || content == "" {
-				RenderError(w, http.StatusBadRequest, "Title and content are required.")
+				categories, err := store.ListCategories()
+				if err != nil {
+					RenderError(w, http.StatusInternalServerError, "Could not load categories.")
+					return
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				if err := renderPage(w, "create_post.html", map[string]any{
+					"User":       user,
+					"Categories": categories,
+					"Error":      "Title and content cannot be empty.",
+					"Title":      title,
+					"Content":    content,
+				}); err != nil {
+					return
+				}
 				return
 			}
 			postID, err := store.CreatePost(user.ID, title, content)
@@ -80,6 +94,7 @@ type postPageData struct {
 	PostUserReaction string
 	Comments         []viewComment
 	ScrollTo         string
+	CommentError     string
 }
 
 func ViewPostHandler(store *db.Store) http.HandlerFunc {
@@ -188,12 +203,18 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 			comments = append(comments, vc)
 		}
 
-		// Accept only "comment-{digits}" to prevent reflected XSS via the scroll param.
+		// Accept only known targets to prevent reflected XSS via the scroll param.
 		scrollTo := ""
-		if raw := r.URL.Query().Get("scroll"); len(raw) > 8 && raw[:8] == "comment-" {
+		if raw := r.URL.Query().Get("scroll"); raw == "comment-form" {
+			scrollTo = raw
+		} else if len(raw) > 8 && raw[:8] == "comment-" {
 			if _, err := strconv.ParseInt(raw[8:], 10, 64); err == nil {
 				scrollTo = raw
 			}
+		}
+		commentError := ""
+		if r.URL.Query().Get("comment_error") == "required" {
+			commentError = "Comment text cannot be empty."
 		}
 
 		if err := renderPage(w, "post.html", postPageData{
@@ -206,6 +227,7 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 			PostUserReaction: postUserReaction,
 			Comments:         comments,
 			ScrollTo:         scrollTo,
+			CommentError:     commentError,
 		}); err != nil {
 			RenderError(w, http.StatusInternalServerError, "Could not render the post page.")
 		}
