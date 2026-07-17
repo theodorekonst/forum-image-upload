@@ -26,11 +26,14 @@
         <section class="form-panel" aria-labelledby="create-post-heading">
             <h1 id="create-post-heading" class="sr-only">Create post</h1>
             <form class="content-form" method="POST" action="/post/create">
+				{{if .Error}}
+				<p class="form-error">{{.Error}}</p>
+				{{end}}
                 <label for="post-title">Title</label>
-                <input id="post-title" type="text" name="title" required>
+                <input id="post-title" type="text" name="title" value="{{.Title}}" required>
 
                 <label for="post-content">Content</label>
-                <textarea id="post-content" name="content" required></textarea>
+                <textarea id="post-content" name="content" required>{{.Content}}</textarea>
 
                 <fieldset class="category-options">
                     <legend>Categories</legend>
