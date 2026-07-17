@@ -13,22 +13,30 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TestHomeHandler -> should return placeholder text
+// TestHomeHandler verifies that the home page loads successfully.
 func TestHomeHandler(t *testing.T) {
-	req := httptest.NewRequest("GET", "/", nil)
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+
+	conn, err := db.InitializeDatabase(dbPath)
+	if err != nil {
+		t.Fatalf("InitializeDatabase: %v", err)
+	}
+	defer conn.Close()
+
+	store := db.NewStore(conn)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
-	HomeHandler(w, req)
+	HomeHandler(store)(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "Home Page Placeholder") {
-		t.Fatalf("expected placeholder text, got %s", w.Body.String())
-	}
 }
 
-// TestRegisterHandler_Get -> should return placeholder page
+// TestRegisterHandler_Get verifies that the registration page loads.
 func TestRegisterHandler_Get(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "test.db")
@@ -45,8 +53,8 @@ func TestRegisterHandler_Get(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "Register Page Placeholder") {
-		t.Fatalf("expected placeholder text")
+	if !strings.Contains(w.Body.String(), "<title>Register</title>") {
+		t.Fatalf("expected registration page")
 	}
 }
 
@@ -275,7 +283,7 @@ func TestRegisterHandler_Valid(t *testing.T) {
 	}
 }
 
-// TestLoginHandler_Get -> should return placeholder page
+// TestLoginHandler_Get verifies that the login page loads.
 func TestLoginHandler_Get(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "test.db")
@@ -292,8 +300,8 @@ func TestLoginHandler_Get(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "Login Page Placeholder") {
-		t.Fatalf("expected placeholder text")
+	if !strings.Contains(w.Body.String(), "<title>Log in</title>") {
+		t.Fatalf("expected login page")
 	}
 }
 
@@ -410,11 +418,17 @@ func TestLoginHandler_Valid(t *testing.T) {
 	}
 
 	// Ensure old sessions were deleted
-	sessions, _ := store.DB.Query("SELECT token FROM sessions WHERE user_id = ?", uid)
+	sessions, err := store.DB.Query("SELECT token FROM sessions WHERE user_id = ?", uid)
+	if err != nil {
+		t.Fatalf("query sessions: %v", err)
+	}
 	defer sessions.Close()
 	count := 0
 	for sessions.Next() {
 		count++
+	}
+	if err := sessions.Err(); err != nil {
+		t.Fatalf("iterate sessions: %v", err)
 	}
 	if count != 1 {
 		t.Fatalf("expected exactly 1 active session, got %d", count)

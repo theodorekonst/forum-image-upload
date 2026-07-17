@@ -152,8 +152,8 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			email := r.FormValue("email")
 			password := r.FormValue("password")
 
-			loginError := func(msg string) {
-				w.WriteHeader(http.StatusUnauthorized)
+			loginError := func(status int, msg string) {
+				w.WriteHeader(status)
 				renderPage(w, "login.html", map[string]any{
 					"Error": msg,
 					"Email": email,
@@ -162,21 +162,21 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 
 			// 2. Basic empty check
 			if email == "" || password == "" {
-				loginError("Please fill all fields.")
+				loginError(http.StatusBadRequest, "Please fill all fields.")
 				return
 			}
 
 			// 3. Verify email exists
 			user, err := store.GetUserByEmail(email)
 			if err != nil {
-				loginError("Invalid email or password.")
+				loginError(http.StatusUnauthorized, "Invalid email or password.")
 				return
 			}
 
 			// 4. Verify password matches stored hash
 			err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 			if err != nil {
-				loginError("Invalid email or password.")
+				loginError(http.StatusUnauthorized, "Invalid email or password.")
 				return
 			}
 
