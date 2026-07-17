@@ -33,58 +33,73 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			password := r.FormValue("password")
 			confirmPassword := r.FormValue("confirm_password")
 
-			registerError := func(msg string) {
+			registerError := func(field, msg string) {
 				w.WriteHeader(http.StatusBadRequest)
-				renderPage(w, "register.html", map[string]any{
-					"Error":    msg,
-					"Email":    email,
-					"Username": username,
-				})
+				data := map[string]any{
+					"Error":      msg,
+					"Email":      email,
+					"Username":   username,
+					"FirstError": field,
+				}
+				data[field+"Error"] = msg
+				renderPage(w, "register.html", data)
 			}
 
 			// 2. Validate input
-			if email == "" || username == "" || password == "" || confirmPassword == "" {
-				registerError("Please fill all fields.")
+			if email == "" {
+				registerError("Email", "Email is required.")
+				return
+			}
+			if username == "" {
+				registerError("Username", "Username is required.")
+				return
+			}
+			if password == "" {
+				registerError("Password", "Password is required.")
+				return
+			}
+			if confirmPassword == "" {
+				registerError("ConfirmPassword", "Please confirm your password.")
 				return
 			}
 
 			if password != confirmPassword {
-				registerError("Passwords do not match.")
+				registerError("ConfirmPassword", "Passwords do not match.")
 				return
 			}
 
 			if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
-				registerError("Invalid email format.")
+				registerError("Email", "Enter a valid email address.")
 				return
 			}
 			usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
 			if !usernameRegex.MatchString(username) {
-				registerError("Username must be 3–20 characters: letters, numbers, underscore only.")
+				registerError("Username", "Use 3–20 letters, numbers, or underscores.")
 				return
 			}
 			if len(password) < 8 || len(password) > 72 {
-				registerError("Password must be between 8 and 72 characters.")
+				registerError("Password", "Use between 8 and 72 characters.")
 				return
 			}
 			if !regexp.MustCompile(`[A-Z]`).MatchString(password) ||
 				!regexp.MustCompile(`[a-z]`).MatchString(password) ||
 				!regexp.MustCompile(`[0-9]`).MatchString(password) ||
 				!regexp.MustCompile(`[^a-zA-Z0-9]`).MatchString(password) {
-				registerError("Password must include uppercase, lowercase, number and special character.")
+				registerError("Password", "Include uppercase, lowercase, number, and special character.")
 				return
 			}
 
 			// 3. Check if email exists
 			_, err := store.GetUserByEmail(email)
 			if err == nil {
-				registerError("This email is already in use.")
+				registerError("Email", "This email is already in use.")
 				return
 			}
 
 			// 4. Check if username exists
 			_, err = store.GetUserByUsername(username)
 			if err == nil {
-				registerError("This username is already taken.")
+				registerError("Username", "This username is already taken.")
 				return
 			}
 
@@ -152,31 +167,40 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			email := r.FormValue("email")
 			password := r.FormValue("password")
 
-			loginError := func(status int, msg string) {
+			loginError := func(status int, field, msg string) {
 				w.WriteHeader(status)
-				renderPage(w, "login.html", map[string]any{
-					"Error": msg,
-					"Email": email,
-				})
+				data := map[string]any{
+					"Error":      msg,
+					"Email":      email,
+					"FirstError": field,
+				}
+				if field != "" {
+					data[field+"Error"] = msg
+				}
+				renderPage(w, "login.html", data)
 			}
 
 			// 2. Basic empty check
-			if email == "" || password == "" {
-				loginError(http.StatusBadRequest, "Please fill all fields.")
+			if email == "" {
+				loginError(http.StatusBadRequest, "Email", "Email is required.")
+				return
+			}
+			if password == "" {
+				loginError(http.StatusBadRequest, "Password", "Password is required.")
 				return
 			}
 
 			// 3. Verify email exists
 			user, err := store.GetUserByEmail(email)
 			if err != nil {
-				loginError(http.StatusUnauthorized, "Invalid email or password.")
+				loginError(http.StatusUnauthorized, "", "Invalid email or password.")
 				return
 			}
 
 			// 4. Verify password matches stored hash
 			err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 			if err != nil {
-				loginError(http.StatusUnauthorized, "Invalid email or password.")
+				loginError(http.StatusUnauthorized, "", "Invalid email or password.")
 				return
 			}
 

@@ -31,7 +31,7 @@ func TestCreatePostHandlerRejectsWhitespaceOnlyInput(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for whitespace-only post, got %d", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "Title and content cannot be empty.") {
+	if !strings.Contains(w.Body.String(), "Title cannot be empty.") || !strings.Contains(w.Body.String(), "Content cannot be empty.") {
 		t.Fatalf("expected inline validation error")
 	}
 }

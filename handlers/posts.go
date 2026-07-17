@@ -37,14 +37,24 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 					RenderError(w, http.StatusInternalServerError, "Could not load categories.")
 					return
 				}
-				w.WriteHeader(http.StatusBadRequest)
-				if err := renderPage(w, "create_post.html", map[string]any{
+				data := map[string]any{
 					"User":       user,
 					"Categories": categories,
-					"Error":      "Title and content cannot be empty.",
 					"Title":      title,
 					"Content":    content,
-				}); err != nil {
+				}
+				if title == "" {
+					data["TitleError"] = "Title cannot be empty."
+					data["FirstError"] = "Title"
+				}
+				if content == "" {
+					data["ContentError"] = "Content cannot be empty."
+					if _, exists := data["FirstError"]; !exists {
+						data["FirstError"] = "Content"
+					}
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				if err := renderPage(w, "create_post.html", data); err != nil {
 					return
 				}
 				return
