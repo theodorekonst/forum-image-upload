@@ -5,6 +5,7 @@ import (
 	"forum/middleware"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func CreateCommentHandler(store *db.Store) http.HandlerFunc {
@@ -16,7 +17,7 @@ func CreateCommentHandler(store *db.Store) http.HandlerFunc {
 		user, _ := middleware.GetUserFromRequest(store, r)
 
 		postIDStr := r.FormValue("post_id")
-		content := r.FormValue("content")
+		content := strings.TrimSpace(r.FormValue("content"))
 		if content == "" {
 			RenderError(w, http.StatusBadRequest, "Comment text is required.")
 			return

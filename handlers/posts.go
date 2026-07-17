@@ -5,6 +5,7 @@ import (
 	"forum/middleware"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -27,8 +28,8 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 
 		}
 		if r.Method == http.MethodPost {
-			title := r.FormValue("title")
-			content := r.FormValue("content")
+			title := strings.TrimSpace(r.FormValue("title"))
+			content := strings.TrimSpace(r.FormValue("content"))
 			categoryIDs := r.Form["categories"]
 			if title == "" || content == "" {
 				RenderError(w, http.StatusBadRequest, "Title and content are required.")
