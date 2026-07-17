@@ -21,20 +21,27 @@
                 </a>
                 <img class="auth-logo" src="/static/images/01 orange.svg" alt="Forum">
                 <h1 id="login-heading" class="sr-only">Log in</h1>
-                <form class="content-form" method="POST" action="/login">
+                <form class="content-form" method="POST" action="/login" novalidate>
                     {{if .Error}}
-                    <p class="form-error">{{.Error}}</p>
+                    {{if not .FirstError}}<p class="form-error" role="alert">{{.Error}}</p>{{end}}
                     {{end}}
-                    <label for="login-email">Email</label>
-                    <input id="login-email" type="email" name="email" value="{{.Email}}" required>
+                    <div class="form-field{{if .EmailError}} has-error{{end}}">
+                        <label for="login-email">Email</label>
+                        <input id="login-email" type="email" name="email" value="{{.Email}}" required{{if .EmailError}} aria-invalid="true" aria-describedby="login-email-error"{{end}}{{if eq .FirstError "Email"}} autofocus{{end}}>
+                        {{if .EmailError}}<p id="login-email-error" class="field-error" role="alert">{{.EmailError}}</p>{{end}}
+                    </div>
 
-                    <label for="login-password">Password</label>
-                    <input id="login-password" type="password" name="password" required>
+                    <div class="form-field{{if .PasswordError}} has-error{{end}}">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" type="password" name="password" required{{if .PasswordError}} aria-invalid="true" aria-describedby="login-password-error"{{end}}{{if eq .FirstError "Password"}} autofocus{{end}}>
+                        {{if .PasswordError}}<p id="login-password-error" class="field-error" role="alert">{{.PasswordError}}</p>{{end}}
+                    </div>
 
                     <button type="submit">Log in</button>
                     <p class="form-copy">Don't have an account? <a href="/register">Register</a></p>
                 </form>
             </section>
         </main>
+        <script src="/static/js/form-errors.js"></script>
     </body>
 </html>

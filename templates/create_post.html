@@ -25,15 +25,18 @@
     <main class="content-page">
         <section class="form-panel" aria-labelledby="create-post-heading">
             <h1 id="create-post-heading" class="sr-only">Create post</h1>
-            <form class="content-form" method="POST" action="/post/create">
-				{{if .Error}}
-				<p class="form-error">{{.Error}}</p>
-				{{end}}
-                <label for="post-title">Title</label>
-                <input id="post-title" type="text" name="title" value="{{.Title}}" required>
+            <form class="content-form" method="POST" action="/post/create" novalidate>
+                <div class="form-field{{if .TitleError}} has-error{{end}}">
+                    <label for="post-title">Title</label>
+                    <input id="post-title" type="text" name="title" value="{{.Title}}" required{{if .TitleError}} aria-invalid="true" aria-describedby="post-title-error"{{end}}{{if eq .FirstError "Title"}} autofocus{{end}}>
+                    {{if .TitleError}}<p id="post-title-error" class="field-error" role="alert">{{.TitleError}}</p>{{end}}
+                </div>
 
-                <label for="post-content">Content</label>
-                <textarea id="post-content" name="content" required>{{.Content}}</textarea>
+                <div class="form-field{{if .ContentError}} has-error{{end}}">
+                    <label for="post-content">Content</label>
+                    <textarea id="post-content" name="content" required{{if .ContentError}} aria-invalid="true" aria-describedby="post-content-error"{{end}}{{if eq .FirstError "Content"}} autofocus{{end}}>{{.Content}}</textarea>
+                    {{if .ContentError}}<p id="post-content-error" class="field-error" role="alert">{{.ContentError}}</p>{{end}}
+                </div>
 
                 <fieldset class="category-options">
                     <legend>Categories</legend>
@@ -50,6 +53,7 @@
         </section>
     </main>
 
+    <script src="/static/js/form-errors.js"></script>
 </body>
 
 </html>

@@ -155,7 +155,7 @@
 
                         {{if $.User}}
                         <div class="reply-form" id="reply-{{.ID}}" hidden>
-                            <form class="content-form" method="POST" action="/comment/create">
+                            <form class="content-form" method="POST" action="/comment/create" novalidate>
                                 <input type="hidden" name="post_id" value="{{$.Post.ID}}">
                                 <input type="hidden" name="parent_id" value="{{.ID}}">
                                 <textarea name="content" placeholder="Write a reply…" rows="3" required></textarea>
@@ -228,12 +228,12 @@
         {{if .User}}
         <section class="comment-form-section" id="comment-form" aria-labelledby="add-comment-heading">
             <h2 id="add-comment-heading" class="sr-only">Add a comment</h2>
-            <form class="content-form" method="POST" action="/comment/create">
-				{{if .CommentError}}
-				<p class="form-error">{{.CommentError}}</p>
-				{{end}}
+            <form class="content-form" method="POST" action="/comment/create" novalidate>
                 <input type="hidden" name="post_id" value="{{.Post.ID}}">
-                <textarea id="comment-content" name="content" placeholder="Write a comment…" required></textarea>
+                <div class="form-field{{if .CommentError}} has-error{{end}}">
+                    <textarea id="comment-content" name="content" placeholder="Write a comment…" required{{if .CommentError}} aria-invalid="true" aria-describedby="comment-content-error" autofocus{{end}}></textarea>
+                    {{if .CommentError}}<p id="comment-content-error" class="field-error" role="alert">{{.CommentError}}</p>{{end}}
+                </div>
                 <button type="submit">Post comment</button>
             </form>
         </section>
@@ -243,6 +243,7 @@
     {{if .ScrollTo}}<span id="scroll-hint" data-id="{{.ScrollTo}}" hidden></span>{{end}}
     <script src="/static/js/reactions.js"></script>
     <script src="/static/js/timeago.js"></script>
+    <script src="/static/js/form-errors.js"></script>
     <script>
         var hint = document.getElementById('scroll-hint');
         if (hint) {
