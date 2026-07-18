@@ -85,9 +85,11 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 
 type viewComment struct {
 	ID           int64
+	AuthorID     int64
 	Author       string
 	Content      string
 	CreatedAt    time.Time
+	IsDeleted    bool
 	Likes        int64
 	Dislikes     int64
 	UserReaction string
@@ -164,34 +166,43 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 		// Build a flat map of all view comments first
 		vcMap := make(map[int64]viewComment, len(rawComments))
 		for _, c := range rawComments {
-			commentAuthor, err := store.GetUserByID(c.AuthorID)
-			if err != nil {
-				RenderError(w, http.StatusInternalServerError, "Could not load comment author.")
-				return
-			}
-			likes, err := store.CountCommentLikes(c.ID)
-			if err != nil {
-				RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
-				return
-			}
-			dislikes, err := store.CountCommentDislikes(c.ID)
-			if err != nil {
-				RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
-				return
-			}
+			authorName := "[deleted]"
+			content := "[deleted]"
+			var likes, dislikes int64
 			userReaction := ""
-			if user != nil {
-				userReaction, err = store.GetCommentReaction(c.ID, user.ID)
+			if !c.IsDeleted {
+				commentAuthor, err := store.GetUserByID(c.AuthorID)
+				if err != nil {
+					RenderError(w, http.StatusInternalServerError, "Could not load comment author.")
+					return
+				}
+				authorName = commentAuthor.Username
+				content = c.Content
+				likes, err = store.CountCommentLikes(c.ID)
 				if err != nil {
 					RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
 					return
 				}
+				dislikes, err = store.CountCommentDislikes(c.ID)
+				if err != nil {
+					RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+					return
+				}
+				if user != nil {
+					userReaction, err = store.GetCommentReaction(c.ID, user.ID)
+					if err != nil {
+						RenderError(w, http.StatusInternalServerError, "Could not load reactions.")
+						return
+					}
+				}
 			}
 			vcMap[c.ID] = viewComment{
 				ID:           c.ID,
-				Author:       commentAuthor.Username,
-				Content:      c.Content,
+				AuthorID:     c.AuthorID,
+				Author:       authorName,
+				Content:      content,
 				CreatedAt:    c.CreatedAt,
+				IsDeleted:    c.IsDeleted,
 				Likes:        likes,
 				Dislikes:     dislikes,
 				UserReaction: userReaction,

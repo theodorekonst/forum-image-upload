@@ -142,3 +142,113 @@ func TestStoreCRUD(t *testing.T) {
 		t.Fatalf("DeleteSession: %v", err)
 	}
 }
+
+func TestDeletePost(t *testing.T) {
+	// 1. Temporary database
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+
+	conn, err := InitializeDatabase(dbPath)
+	if err != nil {
+		t.Fatalf("InitializeDatabase: %v", err)
+	}
+	defer conn.Close()
+
+	store := NewStore(conn)
+
+	// 2. Create a user because every post needs an author
+	userID, err := store.CreateUser(
+		"delete@example.com",
+		"deleteuser",
+		"hashpw",
+	)
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	// 3. Create the post we are going to delete
+	postID, err := store.CreatePost(
+		userID,
+		"Post to delete",
+		"This post will be deleted",
+	)
+	if err != nil {
+		t.Fatalf("CreatePost: %v", err)
+	}
+	categoryID, _ := store.CreateCategory("Delete cascade")
+	if err := store.AddPostCategory(postID, categoryID); err != nil {
+		t.Fatalf("AddPostCategory: %v", err)
+	}
+	commentID, _ := store.CreateComment(postID, userID, "Delete with post")
+	if err := store.SetPostReaction(postID, userID, "like"); err != nil {
+		t.Fatalf("SetPostReaction: %v", err)
+	}
+	if err := store.SetCommentReaction(commentID, userID, "like"); err != nil {
+		t.Fatalf("SetCommentReaction: %v", err)
+	}
+
+	// 4. Delete it
+	if err := store.DeletePost(postID); err != nil {
+		t.Fatalf("DeletePost: %v", err)
+	}
+
+	// 5. Verify that it no longer exists
+	_, err = store.GetPostByID(postID)
+	if err != ErrNotFound {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+	if _, err := store.GetCommentByID(commentID); err != ErrNotFound {
+		t.Fatalf("expected comments to cascade, got %v", err)
+	}
+	var categoryLinks, postReactions, commentReactions int
+	store.DB.QueryRow(`SELECT COUNT(*) FROM post_categories WHERE post_id = ?`, postID).Scan(&categoryLinks)
+	store.DB.QueryRow(`SELECT COUNT(*) FROM post_likes WHERE post_id = ?`, postID).Scan(&postReactions)
+	store.DB.QueryRow(`SELECT COUNT(*) FROM comment_likes WHERE comment_id = ?`, commentID).Scan(&commentReactions)
+	if categoryLinks != 0 || postReactions != 0 || commentReactions != 0 {
+		t.Fatalf("expected related rows to cascade, got categories=%d post reactions=%d comment reactions=%d", categoryLinks, postReactions, commentReactions)
+	}
+}
+
+func TestDeleteCommentUsesTombstoneWhenRepliesExist(t *testing.T) {
+	dir := t.TempDir()
+	conn, err := InitializeDatabase(filepath.Join(dir, "test.db"))
+	if err != nil {
+		t.Fatalf("InitializeDatabase: %v", err)
+	}
+	defer conn.Close()
+	store := NewStore(conn)
+
+	userID, _ := store.CreateUser("comments@example.com", "comments", "hash")
+	postID, _ := store.CreatePost(userID, "Post", "Content")
+	parentID, _ := store.CreateCommentWithParent(postID, userID, nil, "Parent")
+	replyID, _ := store.CreateCommentWithParent(postID, userID, &parentID, "Reply")
+
+	softDeleted, err := store.DeleteComment(parentID)
+	if err != nil {
+		t.Fatalf("DeleteComment parent: %v", err)
+	}
+	if !softDeleted {
+		t.Fatalf("expected parent comment to use a tombstone")
+	}
+	parent, err := store.GetCommentByID(parentID)
+	if err != nil || !parent.IsDeleted || parent.Content != "" {
+		t.Fatalf("expected deleted parent tombstone, got %+v, %v", parent, err)
+	}
+	if _, err := store.GetCommentByID(replyID); err != nil {
+		t.Fatalf("reply should remain: %v", err)
+	}
+
+	softDeleted, err = store.DeleteComment(replyID)
+	if err != nil {
+		t.Fatalf("DeleteComment reply: %v", err)
+	}
+	if softDeleted {
+		t.Fatalf("expected leaf reply to be hard deleted")
+	}
+	if _, err := store.GetCommentByID(replyID); err != ErrNotFound {
+		t.Fatalf("expected reply to be deleted, got %v", err)
+	}
+	if _, err := store.GetCommentByID(parentID); err != ErrNotFound {
+		t.Fatalf("expected empty parent tombstone to be cleaned up, got %v", err)
+	}
+}

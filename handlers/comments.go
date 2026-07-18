@@ -11,7 +11,7 @@ import (
 func CreateCommentHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
 			return
 		}
 		user, _ := middleware.GetUserFromRequest(store, r)
@@ -32,6 +32,11 @@ func CreateCommentHandler(store *db.Store) http.HandlerFunc {
 			pid, err := strconv.ParseInt(pidStr, 10, 64)
 			if err != nil {
 				RenderError(w, http.StatusBadRequest, "Invalid parent ID.")
+				return
+			}
+			parent, err := store.GetCommentByID(pid)
+			if err != nil || parent.IsDeleted || parent.PostID != postID {
+				RenderError(w, http.StatusBadRequest, "Invalid parent comment.")
 				return
 			}
 			parentID = &pid

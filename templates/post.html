@@ -49,6 +49,14 @@
             </div>
             <h1>{{.Post.Title}}</h1>
             <p class="post-body">{{.Post.Content}}</p>
+            {{if and .User (eq .User.ID .Post.AuthorID)}}
+            <form class="delete-form post-delete-form" method="POST" action="/post/delete" data-confirm-title="Delete post?" data-confirm-message="This will permanently delete the post and all of its comments.">
+                <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                <button class="delete-button" type="submit" aria-label="Delete post" title="Delete post">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
+                </button>
+            </form>
+            {{end}}
             <div class="reaction-row" aria-label="Post reactions">
                 {{if .User}}
                 <form method="POST" action="/post/react">
@@ -101,8 +109,17 @@
                 <div class="comment-list">
                     {{range .Comments}}
                     <article class="comment-card" id="comment-{{.ID}}">
+                        {{if and $.User (not .IsDeleted) (eq $.User.ID .AuthorID)}}
+                        <form class="delete-form comment-delete-form" method="POST" action="/comment/delete" data-confirm-title="Delete comment?" data-confirm-message="This comment will be removed. Replies will remain in the discussion.">
+                            <input type="hidden" name="comment_id" value="{{.ID}}">
+                            <button class="delete-button" type="submit" aria-label="Delete comment" title="Delete comment">
+                                <svg aria-hidden="true" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
+                            </button>
+                        </form>
+                        {{end}}
                         <p class="comment-meta"><strong>{{.Author}}</strong> <time datetime="{{.CreatedAt.UTC.Format "2006-01-02T15:04:05Z"}}">{{.CreatedAt.Format "January 2, 2006"}}</time></p>
-                        <p class="comment-body">{{.Content}}</p>
+                        <p class="comment-body{{if .IsDeleted}} is-deleted{{end}}">{{.Content}}</p>
+                        {{if not .IsDeleted}}
                         <div class="reaction-row" aria-label="Comment reactions">
                             {{if $.User}}
                             <form method="POST" action="/comment/react">
@@ -163,13 +180,23 @@
                             </form>
                         </div>
                         {{end}}
+                        {{end}}
 
                         {{if .Replies}}
                         <div class="reply-list">
                             {{range .Replies}}
                             <article class="comment-card reply-card" id="comment-{{.ID}}">
+                                {{if and $.User (not .IsDeleted) (eq $.User.ID .AuthorID)}}
+                                <form class="delete-form comment-delete-form" method="POST" action="/comment/delete" data-confirm-title="Delete reply?" data-confirm-message="This reply will be permanently removed.">
+                                    <input type="hidden" name="comment_id" value="{{.ID}}">
+                                    <button class="delete-button" type="submit" aria-label="Delete reply" title="Delete reply">
+                                        <svg aria-hidden="true" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
+                                    </button>
+                                </form>
+                                {{end}}
                                 <p class="comment-meta"><strong>{{.Author}}</strong> <time datetime="{{.CreatedAt.UTC.Format "2006-01-02T15:04:05Z"}}">{{.CreatedAt.Format "January 2, 2006"}}</time></p>
-                                <p class="comment-body">{{.Content}}</p>
+                                <p class="comment-body{{if .IsDeleted}} is-deleted{{end}}">{{.Content}}</p>
+                                {{if not .IsDeleted}}
                                 <div class="reaction-row" aria-label="Reply reactions">
                                     {{if $.User}}
                                     <form method="POST" action="/comment/react">
@@ -213,6 +240,7 @@
                                     </button>
                                     {{end}}
                                 </div>
+                                {{end}}
                             </article>
                             {{end}}
                         </div>
@@ -240,10 +268,27 @@
         {{end}}
     </main>
 
+    <dialog class="confirm-dialog" id="delete-confirmation" aria-labelledby="delete-confirmation-title" aria-describedby="delete-confirmation-message">
+        <div class="confirm-dialog-content">
+            <div class="confirm-dialog-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
+            </div>
+            <div>
+                <h2 id="delete-confirmation-title">Delete?</h2>
+                <p id="delete-confirmation-message">This action cannot be undone.</p>
+            </div>
+        </div>
+        <div class="confirm-dialog-actions">
+            <button class="dialog-cancel-button" type="button">Cancel</button>
+            <button class="dialog-delete-button" type="button">Delete</button>
+        </div>
+    </dialog>
+
     {{if .ScrollTo}}<span id="scroll-hint" data-id="{{.ScrollTo}}" hidden></span>{{end}}
     <script src="/static/js/reactions.js"></script>
     <script src="/static/js/timeago.js"></script>
     <script src="/static/js/form-errors.js"></script>
+    <script src="/static/js/delete-confirmation.js"></script>
     <script>
         var hint = document.getElementById('scroll-hint');
         if (hint) {

@@ -399,6 +399,139 @@ button:disabled {
     display: contents;
 }
 
+.delete-form {
+    display: flex;
+    position: absolute;
+    right: 0.8rem;
+    top: 0.8rem;
+}
+
+.delete-button {
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    display: grid;
+    height: 1.7rem;
+    opacity: 0.55;
+    padding: 0;
+    place-items: center;
+    width: 1.7rem;
+}
+
+.delete-button:hover,
+.delete-button:focus-visible {
+    background-color: rgba(248, 113, 113, 0.1);
+    box-shadow: none;
+    color: #f87171;
+    opacity: 1;
+}
+
+.delete-button svg {
+    fill: none;
+    height: 1rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 1rem;
+}
+
+.confirm-dialog {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    inset: 0;
+    margin: auto;
+    max-width: 430px;
+    padding: 1.35rem;
+    width: calc(100% - 2rem);
+}
+
+.confirm-dialog::backdrop {
+    background: rgba(3, 6, 12, 0.72);
+    backdrop-filter: blur(3px);
+}
+
+.confirm-dialog-content {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.85rem;
+}
+
+.confirm-dialog-icon {
+    background-color: rgba(248, 113, 113, 0.1);
+    border-radius: 8px;
+    color: #f87171;
+    display: grid;
+    flex: 0 0 2.25rem;
+    height: 2.25rem;
+    place-items: center;
+}
+
+.confirm-dialog-icon svg {
+    fill: none;
+    height: 1.1rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 1.1rem;
+}
+
+.confirm-dialog h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.35rem;
+}
+
+.confirm-dialog p {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.confirm-dialog-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+}
+
+.confirm-dialog-actions button {
+    font-size: 0.85rem;
+    padding: 0.55rem 0.9rem;
+}
+
+.dialog-cancel-button {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.dialog-cancel-button:hover,
+.dialog-cancel-button:focus-visible {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: none;
+    color: var(--text);
+    opacity: 1;
+}
+
+.dialog-delete-button {
+    background-color: #dc2626;
+    color: white;
+}
+
+.dialog-delete-button:hover {
+    background-color: #ef4444;
+}
+
+.post-delete-form {
+    right: 1rem;
+    top: 1rem;
+}
+
 .reaction-button {
     align-items: center;
     background-color: transparent;
@@ -539,6 +672,7 @@ button:disabled {
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
     padding: 1.5rem 1.75rem;
+    position: relative;
 }
 
 .comments-section {
@@ -672,6 +806,7 @@ button:disabled {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
     padding: 0.9rem 1.1rem;
+    position: relative;
     scroll-margin-top: 5rem;
 }
 
@@ -693,6 +828,12 @@ button:disabled {
 .comment-body {
     font-size: 0.9rem;
     line-height: 1.65;
+}
+
+.comment-body.is-deleted {
+    color: var(--muted);
+    font-style: italic;
+    opacity: 0.65;
 }
 
 .reply-list {

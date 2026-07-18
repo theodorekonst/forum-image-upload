@@ -126,7 +126,7 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			_, err = store.CreateSession(newUserID, token, expiresAt)
 			if err != nil {
 				log.Println("error creating session:", err)
-				http.Error(w, "internal server error", http.StatusInternalServerError)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
 
@@ -170,11 +170,13 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			loginError := func(status int, field, msg string) {
 				w.WriteHeader(status)
 				data := map[string]any{
-					"Error":      msg,
 					"Email":      email,
 					"FirstError": field,
 				}
-				if field != "" {
+				if field == "Credentials" {
+					data["CredentialsError"] = msg
+					data["FirstError"] = "Password"
+				} else {
 					data[field+"Error"] = msg
 				}
 				renderPage(w, "login.html", data)
@@ -193,14 +195,14 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			// 3. Verify email exists
 			user, err := store.GetUserByEmail(email)
 			if err != nil {
-				loginError(http.StatusUnauthorized, "", "Invalid email or password.")
+				loginError(http.StatusUnauthorized, "Credentials", "Email or password is incorrect.")
 				return
 			}
 
 			// 4. Verify password matches stored hash
 			err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 			if err != nil {
-				loginError(http.StatusUnauthorized, "", "Invalid email or password.")
+				loginError(http.StatusUnauthorized, "Credentials", "Email or password is incorrect.")
 				return
 			}
 
@@ -216,7 +218,7 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			_, err = store.CreateSession(user.ID, token, expiresAt)
 			if err != nil {
 				log.Println("error creating session:", err)
-				http.Error(w, "internal server error", http.StatusInternalServerError)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
 
@@ -248,7 +250,7 @@ func LogoutHandler(store *db.Store) http.HandlerFunc {
 
 		// GET -> method not allowed (CSRF protection)
 		if r.Method == http.MethodGet {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
 			return
 		}
 
@@ -286,6 +288,6 @@ func LogoutHandler(store *db.Store) http.HandlerFunc {
 		}
 
 		// Unsupported method
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
 	}
 }

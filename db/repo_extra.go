@@ -16,6 +16,72 @@ func (s *Store) CreateCommentWithParent(postID, authorID int64, parentID *int64,
 	return result.LastInsertId()
 }
 
+func (s *Store) GetCommentByID(id int64) (*Comment, error) {
+	row := s.DB.QueryRow(`SELECT id, post_id, author_id, content, parent_id, is_deleted, created_at FROM comments WHERE id = ?`, id)
+	var comment Comment
+	if err := row.Scan(&comment.ID, &comment.PostID, &comment.AuthorID, &comment.Content, &comment.ParentID, &comment.IsDeleted, &comment.CreatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &comment, nil
+}
+
+// DeleteComment hard-deletes a leaf comment and leaves a tombstone when replies exist.
+func (s *Store) DeleteComment(id int64) (bool, error) {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
+	var comment Comment
+	row := tx.QueryRow(`SELECT id, post_id, author_id, content, parent_id, is_deleted, created_at FROM comments WHERE id = ?`, id)
+	if err := row.Scan(&comment.ID, &comment.PostID, &comment.AuthorID, &comment.Content, &comment.ParentID, &comment.IsDeleted, &comment.CreatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, ErrNotFound
+		}
+		return false, err
+	}
+
+	var replyCount int
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM comments WHERE parent_id = ?`, id).Scan(&replyCount); err != nil {
+		return false, err
+	}
+
+	if replyCount > 0 {
+		if _, err := tx.Exec(`UPDATE comments SET content = '', is_deleted = 1 WHERE id = ?`, id); err != nil {
+			return false, err
+		}
+		if _, err := tx.Exec(`DELETE FROM comment_likes WHERE comment_id = ?`, id); err != nil {
+			return false, err
+		}
+		if err := tx.Commit(); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	if _, err := tx.Exec(`DELETE FROM comments WHERE id = ?`, id); err != nil {
+		return false, err
+	}
+	if comment.ParentID != nil {
+		_, err = tx.Exec(`
+			DELETE FROM comments
+			WHERE id = ? AND is_deleted = 1
+			AND NOT EXISTS (SELECT 1 FROM comments WHERE parent_id = ?)
+		`, *comment.ParentID, *comment.ParentID)
+		if err != nil {
+			return false, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return false, err
+	}
+	return false, nil
+}
+
 // DeleteSession removes a session by its token and returns ErrNotFound if nothing was deleted.
 func (s *Store) DeleteSession(token string) error {
 

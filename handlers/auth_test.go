@@ -349,6 +349,9 @@ func TestLoginHandler_EmailNotFound(t *testing.T) {
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", w.Code)
 	}
+	if !strings.Contains(w.Body.String(), "Email or password is incorrect.") {
+		t.Fatalf("expected generic credentials error")
+	}
 }
 
 // TestLoginHandler_WrongPassword -> should return 401
@@ -374,6 +377,9 @@ func TestLoginHandler_WrongPassword(t *testing.T) {
 
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "Email or password is incorrect.") {
+		t.Fatalf("expected generic credentials error")
 	}
 }
 

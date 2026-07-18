@@ -26,6 +26,9 @@ func InitializeDatabase(path string) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite database: %w", err)
 	}
+	// SQLite PRAGMAs are connection-scoped. Keep one connection so foreign-key
+	// enforcement remains enabled for every query executed through this store.
+	conn.SetMaxOpenConns(1)
 
 	if _, err := conn.Exec("PRAGMA foreign_keys = ON;"); err != nil {
 		conn.Close()
@@ -49,6 +52,9 @@ func migrate(conn *sql.DB) error {
 		return fmt.Errorf("execute schema migration: %w", err)
 	}
 	if err := addColumnIfMissing(conn, "comments", "parent_id", "INTEGER REFERENCES comments(id) ON DELETE SET NULL"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(conn, "comments", "is_deleted", "INTEGER NOT NULL DEFAULT 0"); err != nil {
 		return err
 	}
 	return nil

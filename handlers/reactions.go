@@ -74,6 +74,11 @@ func CommentReactHandler(store *db.Store) http.HandlerFunc {
 			RenderError(w, http.StatusBadRequest, "Invalid comment ID.")
 			return
 		}
+		comment, err := store.GetCommentByID(commentID)
+		if err != nil || comment.IsDeleted {
+			RenderError(w, http.StatusNotFound, "Comment not found.")
+			return
+		}
 
 		if reactionType != "like" && reactionType != "dislike" {
 			RenderError(w, http.StatusBadRequest, "Invalid reaction type.")

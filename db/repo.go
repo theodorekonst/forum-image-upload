@@ -36,6 +36,7 @@ type Comment struct {
 	AuthorID  int64     `json:"author_id"`
 	Content   string    `json:"content"`
 	ParentID  *int64    `json:"parent_id"`
+	IsDeleted bool      `json:"is_deleted"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -131,6 +132,14 @@ func (s *Store) GetPostByID(id int64) (*Post, error) {
 	return &post, nil
 }
 
+func (s *Store) DeletePost(id int64) error {
+	_, err := s.DB.Exec(
+		`DELETE FROM posts WHERE id = ?`,
+		id,
+	)
+	return err
+}
+
 func (s *Store) ListPosts(limit, offset int) ([]*Post, error) {
 	rows, err := s.DB.Query(`SELECT id, author_id, title, content, created_at FROM posts ORDER BY created_at DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
@@ -163,7 +172,7 @@ func (s *Store) CreateComment(postID, authorID int64, content string) (int64, er
 }
 
 func (s *Store) ListCommentsByPost(postID int64) ([]*Comment, error) {
-	rows, err := s.DB.Query(`SELECT id, post_id, author_id, content, parent_id, created_at FROM comments WHERE post_id = ? ORDER BY created_at`, postID)
+	rows, err := s.DB.Query(`SELECT id, post_id, author_id, content, parent_id, is_deleted, created_at FROM comments WHERE post_id = ? ORDER BY created_at`, postID)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +181,7 @@ func (s *Store) ListCommentsByPost(postID int64) ([]*Comment, error) {
 	var comments []*Comment
 	for rows.Next() {
 		var comment Comment
-		if err := rows.Scan(&comment.ID, &comment.PostID, &comment.AuthorID, &comment.Content, &comment.ParentID, &comment.CreatedAt); err != nil {
+		if err := rows.Scan(&comment.ID, &comment.PostID, &comment.AuthorID, &comment.Content, &comment.ParentID, &comment.IsDeleted, &comment.CreatedAt); err != nil {
 			return nil, err
 		}
 		comments = append(comments, &comment)

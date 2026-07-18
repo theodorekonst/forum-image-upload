@@ -34,9 +34,11 @@ func main() {
 	mux.Handle("/logout", middleware.RequireAuth(store, handlers.LogoutHandler(store)))
 
 	mux.Handle("/post/create", middleware.RequireAuth(store, handlers.CreatePostHandler(store)))
+	mux.Handle("/post/delete", middleware.RequireAuth(store, handlers.DeletePostHandler(store)))
 	mux.Handle("/post/react", middleware.RequireAuth(store, handlers.PostReactHandler(store)))
 	mux.Handle("/post", handlers.ViewPostHandler(store))
 	mux.Handle("/comment/create", middleware.RequireAuth(store, handlers.CreateCommentHandler(store)))
+	mux.Handle("/comment/delete", middleware.RequireAuth(store, handlers.DeleteCommentHandler(store)))
 	mux.Handle("/comment/react", middleware.RequireAuth(store, handlers.CommentReactHandler(store)))
 
 	// 5. Start server
