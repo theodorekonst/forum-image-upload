@@ -24,6 +24,19 @@ document.querySelectorAll(".form-field").forEach(field => {
 });
 
 document.querySelectorAll(".content-form").forEach(form => {
+	const credentialsError = form.querySelector(".credentials-error");
+	if (credentialsError) {
+		form.addEventListener("input", () => {
+			form.querySelectorAll(".form-field.has-error").forEach(field => {
+				field.classList.remove("has-error");
+				const control = field.querySelector("input, textarea");
+				control?.removeAttribute("aria-invalid");
+				control?.removeAttribute("aria-describedby");
+			});
+			credentialsError.remove();
+		}, { once: true });
+	}
+
     const error = form.querySelector(":scope > .form-error");
     if (!error) return;
 
