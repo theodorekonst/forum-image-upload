@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"forum/db"
 	"log"
 	"net/http"
@@ -95,11 +96,21 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 				registerError("Email", "This email is already in use.")
 				return
 			}
+			if !errors.Is(err, db.ErrNotFound) {
+				log.Println("error checking email:", err)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
+				return
+			}
 
 			// 4. Check if username exists
 			_, err = store.GetUserByUsername(username)
 			if err == nil {
 				registerError("Username", "This username is already taken.")
+				return
+			}
+			if !errors.Is(err, db.ErrNotFound) {
+				log.Println("error checking username:", err)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
 
@@ -194,8 +205,13 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 
 			// 3. Verify email exists
 			user, err := store.GetUserByEmail(email)
-			if err != nil {
+			if errors.Is(err, db.ErrNotFound) {
 				loginError(http.StatusUnauthorized, "Credentials", "Email or password is incorrect.")
+				return
+			}
+			if err != nil {
+				log.Println("error loading user:", err)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
 
@@ -208,7 +224,11 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 
 			// 5. Session & Cookie Handling
 			// Delete old sessions
-			store.DeleteSessionsByUserID(user.ID)
+			if err := store.DeleteSessionsByUserID(user.ID); err != nil {
+				log.Println("error deleting old sessions:", err)
+				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
+				return
+			}
 
 			// Generate new token
 			token := uuid.New().String()

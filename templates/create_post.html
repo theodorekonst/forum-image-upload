@@ -38,7 +38,7 @@
                     {{if .ContentError}}<p id="post-content-error" class="field-error" role="alert">{{.ContentError}}</p>{{end}}
                 </div>
 
-                <fieldset class="category-options">
+                <fieldset class="category-options{{if .CategoryError}} has-error{{end}}"{{if .CategoryError}} aria-invalid="true" aria-describedby="post-category-error"{{end}}>
                     <legend>Categories</legend>
                     {{range .Categories}}
                     <label>
@@ -46,6 +46,7 @@
                         {{.Name}}
                     </label>
                     {{end}}
+                    {{if .CategoryError}}<p id="post-category-error" class="field-error" role="alert">{{.CategoryError}}</p>{{end}}
                 </fieldset>
 
                 <button type="submit">Publish post</button>

@@ -18,7 +18,6 @@ WORKDIR /app
 COPY --from=builder /app/server .
 COPY --from=builder /app/templates ./templates
 COPY --from=builder /app/static ./static
-COPY --from=builder /app/forum.db ./forum.db
 
 EXPOSE 8080
 

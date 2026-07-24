@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -250,5 +251,63 @@ func TestDeleteCommentUsesTombstoneWhenRepliesExist(t *testing.T) {
 	}
 	if _, err := store.GetCommentByID(parentID); err != ErrNotFound {
 		t.Fatalf("expected empty parent tombstone to be cleaned up, got %v", err)
+	}
+}
+
+func TestInitializeDatabaseCreatesDefaultCategories(t *testing.T) {
+	conn, err := InitializeDatabase(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("InitializeDatabase: %v", err)
+	}
+	defer conn.Close()
+
+	categories, err := NewStore(conn).ListCategories()
+	if err != nil {
+		t.Fatalf("ListCategories: %v", err)
+	}
+	if len(categories) < 5 {
+		t.Fatalf("expected default categories, got %d", len(categories))
+	}
+}
+
+func TestCreatePostWithCategoriesIsAtomic(t *testing.T) {
+	conn, err := InitializeDatabase(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("InitializeDatabase: %v", err)
+	}
+	defer conn.Close()
+	store := NewStore(conn)
+
+	userID, err := store.CreateUser("atomic@example.com", "atomic_user", "hash")
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+	if _, err := store.CreatePostWithCategories(userID, "Title", "Content", []int64{999999}); !errors.Is(err, ErrInvalidCategory) {
+		t.Fatalf("expected ErrInvalidCategory, got %v", err)
+	}
+
+	var count int
+	if err := store.DB.QueryRow(`SELECT COUNT(*) FROM posts WHERE author_id = ?`, userID).Scan(&count); err != nil {
+		t.Fatalf("count posts: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("expected transaction rollback, found %d posts", count)
+	}
+}
+
+func TestCreatePostWithCategoriesRequiresCategory(t *testing.T) {
+	conn, err := InitializeDatabase(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("InitializeDatabase: %v", err)
+	}
+	defer conn.Close()
+	store := NewStore(conn)
+
+	userID, err := store.CreateUser("required@example.com", "required_user", "hash")
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+	if _, err := store.CreatePostWithCategories(userID, "Title", "Content", nil); !errors.Is(err, ErrCategoryRequired) {
+		t.Fatalf("expected ErrCategoryRequired, got %v", err)
 	}
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"forum/db"
 	"forum/middleware"
 	"net/http"
@@ -30,8 +31,8 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 		if r.Method == http.MethodPost {
 			title := strings.TrimSpace(r.FormValue("title"))
 			content := strings.TrimSpace(r.FormValue("content"))
-			categoryIDs := r.Form["categories"]
-			if title == "" || content == "" {
+			categoryValues := r.Form["categories"]
+			if title == "" || content == "" || len(categoryValues) == 0 {
 				categories, err := store.ListCategories()
 				if err != nil {
 					RenderError(w, http.StatusInternalServerError, "Could not load categories.")
@@ -53,27 +54,35 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 						data["FirstError"] = "Content"
 					}
 				}
+				if len(categoryValues) == 0 {
+					data["CategoryError"] = "Choose at least one category."
+					if _, exists := data["FirstError"]; !exists {
+						data["FirstError"] = "Category"
+					}
+				}
 				w.WriteHeader(http.StatusBadRequest)
 				if err := renderPage(w, "create_post.html", data); err != nil {
 					return
 				}
 				return
 			}
-			postID, err := store.CreatePost(user.ID, title, content)
-			if err != nil {
-				RenderError(w, http.StatusInternalServerError, "Could not create the post.")
-				return
-			}
-			for _, cidStr := range categoryIDs {
+			categoryIDs := make([]int64, 0, len(categoryValues))
+			for _, cidStr := range categoryValues {
 				cid, err := strconv.ParseInt(cidStr, 10, 64)
-				if err != nil {
+				if err != nil || cid <= 0 {
 					RenderError(w, http.StatusBadRequest, "Invalid category.")
 					return
 				}
-				if err := store.AddPostCategory(postID, cid); err != nil {
-					RenderError(w, http.StatusInternalServerError, "Could not save the post category.")
-					return
-				}
+				categoryIDs = append(categoryIDs, cid)
+			}
+			postID, err := store.CreatePostWithCategories(user.ID, title, content, categoryIDs)
+			if errors.Is(err, db.ErrCategoryRequired) || errors.Is(err, db.ErrInvalidCategory) {
+				RenderError(w, http.StatusBadRequest, "Invalid category.")
+				return
+			}
+			if err != nil {
+				RenderError(w, http.StatusInternalServerError, "Could not create the post.")
+				return
 			}
 			http.Redirect(w, r, "/post?id="+strconv.FormatInt(postID, 10), http.StatusSeeOther)
 			return
@@ -111,6 +120,11 @@ type postPageData struct {
 
 func ViewPostHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
+			return
+		}
+
 		user, _ := middleware.GetUserFromRequest(store, r)
 
 		idStr := r.URL.Query().Get("id")
@@ -121,8 +135,12 @@ func ViewPostHandler(store *db.Store) http.HandlerFunc {
 		}
 
 		post, err := store.GetPostByID(id)
-		if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
 			RenderError(w, http.StatusNotFound, "Post not found.")
+			return
+		}
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load the post.")
 			return
 		}
 

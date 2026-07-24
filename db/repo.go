@@ -55,6 +55,8 @@ type Session struct {
 }
 
 var ErrNotFound = errors.New("record not found")
+var ErrCategoryRequired = errors.New("at least one category is required")
+var ErrInvalidCategory = errors.New("invalid category")
 
 func (s *Store) CreateUser(email, username, passwordHash string) (int64, error) {
 	result, err := s.DB.Exec(

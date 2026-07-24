@@ -35,6 +35,13 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+INSERT OR IGNORE INTO categories (name) VALUES
+    ('Programming'),
+    ('Sports'),
+    ('Gaming'),
+    ('Movies'),
+    ('General');
+
 CREATE TABLE IF NOT EXISTS post_categories (
     post_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,

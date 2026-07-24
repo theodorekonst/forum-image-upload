@@ -5,6 +5,65 @@ import (
 	"errors"
 )
 
+// CreatePostWithCategories creates a post and all of its category links
+// atomically. No post is persisted if any category is invalid.
+func (s *Store) CreatePostWithCategories(authorID int64, title, content string, categoryIDs []int64) (int64, error) {
+	if len(categoryIDs) == 0 {
+		return 0, ErrCategoryRequired
+	}
+
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	seen := make(map[int64]struct{}, len(categoryIDs))
+	for _, categoryID := range categoryIDs {
+		if categoryID <= 0 {
+			return 0, ErrInvalidCategory
+		}
+		if _, duplicate := seen[categoryID]; duplicate {
+			continue
+		}
+		seen[categoryID] = struct{}{}
+
+		var exists int
+		if err := tx.QueryRow(`SELECT 1 FROM categories WHERE id = ?`, categoryID).Scan(&exists); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return 0, ErrInvalidCategory
+			}
+			return 0, err
+		}
+	}
+
+	result, err := tx.Exec(
+		`INSERT INTO posts (author_id, title, content) VALUES (?, ?, ?)`,
+		authorID, title, content,
+	)
+	if err != nil {
+		return 0, err
+	}
+	postID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	for categoryID := range seen {
+		if _, err := tx.Exec(
+			`INSERT INTO post_categories (post_id, category_id) VALUES (?, ?)`,
+			postID, categoryID,
+		); err != nil {
+			return 0, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return postID, nil
+}
+
 func (s *Store) CreateCommentWithParent(postID, authorID int64, parentID *int64, content string) (int64, error) {
 	result, err := s.DB.Exec(
 		`INSERT INTO comments (post_id, author_id, parent_id, content) VALUES (?, ?, ?, ?)`,

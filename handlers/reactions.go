@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"forum/db"
 	"forum/middleware"
 	"net/http"
@@ -20,8 +21,15 @@ func PostReactHandler(store *db.Store) http.HandlerFunc {
 		reactionType := r.FormValue("reaction_type")
 
 		postID, err := strconv.ParseInt(postIDStr, 10, 64)
-		if err != nil {
+		if err != nil || postID <= 0 {
 			RenderError(w, http.StatusBadRequest, "Invalid post ID.")
+			return
+		}
+		if _, err := store.GetPostByID(postID); errors.Is(err, db.ErrNotFound) {
+			RenderError(w, http.StatusNotFound, "Post not found.")
+			return
+		} else if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load the post.")
 			return
 		}
 
@@ -66,17 +74,20 @@ func CommentReactHandler(store *db.Store) http.HandlerFunc {
 		user, _ := middleware.GetUserFromRequest(store, r)
 
 		commentIDStr := r.FormValue("comment_id")
-		postIDStr := r.FormValue("post_id")
 		reactionType := r.FormValue("reaction_type")
 
 		commentID, err := strconv.ParseInt(commentIDStr, 10, 64)
-		if err != nil {
+		if err != nil || commentID <= 0 {
 			RenderError(w, http.StatusBadRequest, "Invalid comment ID.")
 			return
 		}
 		comment, err := store.GetCommentByID(commentID)
-		if err != nil || comment.IsDeleted {
+		if errors.Is(err, db.ErrNotFound) || (err == nil && comment.IsDeleted) {
 			RenderError(w, http.StatusNotFound, "Comment not found.")
+			return
+		}
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load the comment.")
 			return
 		}
 
@@ -103,6 +114,6 @@ func CommentReactHandler(store *db.Store) http.HandlerFunc {
 			}
 		}
 
-		http.Redirect(w, r, "/post?id="+postIDStr, http.StatusSeeOther)
+		http.Redirect(w, r, "/post?id="+strconv.FormatInt(comment.PostID, 10), http.StatusSeeOther)
 	}
 }
