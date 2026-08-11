@@ -5,7 +5,10 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    oauth_provider TEXT,
+    oauth_id TEXT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(oauth_provider, oauth_id)
 );
 
 CREATE TABLE IF NOT EXISTS posts (

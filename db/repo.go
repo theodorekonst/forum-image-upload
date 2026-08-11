@@ -15,11 +15,13 @@ func NewStore(db *sql.DB) *Store {
 }
 
 type User struct {
-	ID           int64     `json:"id"`
-	Email        string    `json:"email"`
-	Username     string    `json:"username"`
-	PasswordHash string    `json:"password_hash"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID            int64     `json:"id"`
+	Email         string    `json:"email"`
+	Username      string    `json:"username"`
+	PasswordHash  string    `json:"password_hash"`
+	OAuthProvider string    `json:"oauth_provider"`
+	OAuthID       string    `json:"oauth_id"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type Post struct {
@@ -72,31 +74,66 @@ func (s *Store) CreateUser(email, username, passwordHash string) (int64, error) 
 }
 
 func (s *Store) GetUserByID(id int64) (*User, error) {
-	row := s.DB.QueryRow(`SELECT id, email, username, password_hash, created_at FROM users WHERE id = ?`, id)
+	row := s.DB.QueryRow(
+		`SELECT id, email, username, password_hash, oauth_provider, oauth_id, created_at FROM users WHERE id = ?`,
+		id,
+	)
 	return scanUser(row)
 }
 
 func (s *Store) GetUserByEmail(email string) (*User, error) {
-	row := s.DB.QueryRow(`SELECT id, email, username, password_hash, created_at FROM users WHERE email = ?`, email)
+	row := s.DB.QueryRow(
+		`SELECT id, email, username, password_hash, oauth_provider, oauth_id, created_at FROM users WHERE email = ?`,
+		email,
+	)
 	return scanUser(row)
 }
 
-// GetUserByUsername returns a user by username or ErrNotFound if it does not exist.
 func (s *Store) GetUserByUsername(username string) (*User, error) {
-
-	// Query user by username
 	row := s.DB.QueryRow(
-		`SELECT id, email, username, password_hash, created_at FROM users WHERE username = ?`,
+		`SELECT id, email, username, password_hash, oauth_provider, oauth_id, created_at FROM users WHERE username = ?`,
 		username,
 	)
+	return scanUser(row)
+}
 
+// GetUserByOAuth returns a user by OAuth provider and ID or ErrNotFound if it does not exist.
+func (s *Store) GetUserByOAuth(provider, oauthID string) (*User, error) {
+	// Query user by OAuth provider and ID
+	row := s.DB.QueryRow(
+		`SELECT id, email, username, password_hash, oauth_provider, oauth_id, created_at FROM users WHERE oauth_provider = ? AND oauth_id = ?`,
+		provider, oauthID,
+	)
 	// Scan into struct
 	return scanUser(row)
 }
 
+// CreateOAuthUser creates a new user record for an OAuth account.
+func (s *Store) CreateOAuthUser(email, username, provider, oauthID string) (int64, error) {
+	// Insert new OAuth user row
+	result, err := s.DB.Exec(
+		`INSERT INTO users (email, username, password_hash, oauth_provider, oauth_id)
+         VALUES (?, ?, '', ?, ?)`,
+		email, username, provider, oauthID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	// Return new user ID
+	return result.LastInsertId()
+}
+
 func scanUser(row scanner) (*User, error) {
 	var user User
-	if err := row.Scan(&user.ID, &user.Email, &user.Username, &user.PasswordHash, &user.CreatedAt); err != nil {
+	if err := row.Scan(
+		&user.ID,
+		&user.Email,
+		&user.Username,
+		&user.PasswordHash,
+		&user.OAuthProvider,
+		&user.OAuthID,
+		&user.CreatedAt,
+	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
