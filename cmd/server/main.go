@@ -1,6 +1,7 @@
 package main
 
 import (
+	"forum/config"
 	"forum/db"
 	"forum/handlers"
 	"forum/middleware"
@@ -9,6 +10,8 @@ import (
 )
 
 func main() {
+
+	config.Load()
 
 	// 1. Initialise database
 	connection, err := db.InitializeDatabase("forum.db")

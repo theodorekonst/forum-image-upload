@@ -11,3 +11,6 @@
 
 # Ignore Go build outputs
 bin/
+
+# Ignore environment variables
+.env

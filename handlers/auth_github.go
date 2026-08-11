@@ -1,19 +1,23 @@
 package handlers
 
 import (
+	"forum/config"
 	"forum/db"
 	"net/http"
+	"net/url"
 )
 
 // GitHubLoginHandler starts the OAuth flow by redirecting the user to GitHub.
 func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// 1. Build GitHub authorization URL
-		// (Step 4)
-		authURL := "" // placeholder
+		params := url.Values{}
+		params.Add("client_id", config.GitHubClientID)
+		params.Add("redirect_uri", "http://localhost:8080/auth/github/callback")
+		params.Add("scope", "user:email")
 
-		// 2. Redirect user to GitHub
+		authURL := "https://github.com/login/oauth/authorize?" + params.Encode()
+
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}
 }
