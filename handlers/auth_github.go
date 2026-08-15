@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -49,7 +50,16 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		tokenReqBody.Set("code", code)
 		tokenReqBody.Set("redirect_uri", "http://localhost:8080/auth/github/callback")
 
-		tokenResp, err := http.PostForm("https://github.com/login/oauth/access_token", tokenReqBody)
+		// Fix during testing: GitHub requires Accept: application/json
+		req, _ := http.NewRequest(
+			"POST",
+			"https://github.com/login/oauth/access_token",
+			strings.NewReader(tokenReqBody.Encode()),
+		)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Accept", "application/json")
+
+		tokenResp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to exchange code for token.")
 			return
@@ -73,10 +83,10 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 
 		// 3. Fetch GitHub user info
-		req, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
-		req.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
+		reqUser, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
+		reqUser.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
 
-		userResp, err := http.DefaultClient.Do(req)
+		userResp, err := http.DefaultClient.Do(reqUser)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to fetch GitHub user.")
 			return
