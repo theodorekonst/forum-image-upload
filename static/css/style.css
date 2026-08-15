@@ -1028,7 +1028,7 @@ button:disabled {
     right: 0;
 }
 
-/* GitHub button */
+/* OAuth buttons */
 .oauth-btn {
     background-color: #24292e;
     color: var(--text);
@@ -1054,22 +1054,6 @@ button:disabled {
 }
 
 .oauth-btn:hover img {
-    opacity: 1;
-}
-
-/* Google button override */
-.oauth-btn[href="/auth/google"] {
-    background-color: #ffffff;
-    color: #202124;
-    border: 1px solid var(--border);
-}
-
-.oauth-btn[href="/auth/google"]:hover {
-    opacity: 0.95;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.oauth-btn[href="/auth/google"] img {
     opacity: 1;
 }
 
