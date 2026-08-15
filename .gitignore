@@ -14,3 +14,4 @@ bin/
 
 # Ignore environment variables
 .env
+.envrc

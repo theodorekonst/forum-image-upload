@@ -8,6 +8,9 @@ import (
 var (
 	GitHubClientID     string
 	GitHubClientSecret string
+
+	GoogleClientID     = os.Getenv("GOOGLE_CLIENT_ID")
+	GoogleClientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
 )
 
 func Load() {
