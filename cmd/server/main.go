@@ -37,6 +37,10 @@ func main() {
 	mux.Handle("/auth/github", handlers.GitHubLoginHandler(store))
 	mux.Handle("/auth/github/callback", handlers.GitHubCallbackHandler(store))
 
+	// Google OAuth routes
+	mux.Handle("/auth/google", handlers.GoogleLoginHandler(store))
+	mux.Handle("/auth/google/callback", handlers.GoogleCallbackHandler(store))
+
 	// 4. Logout (requires auth)
 	mux.Handle("/logout", middleware.RequireAuth(store, handlers.LogoutHandler(store)))
 
