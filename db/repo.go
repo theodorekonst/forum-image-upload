@@ -123,6 +123,15 @@ func (s *Store) CreateOAuthUser(email, username, provider, oauthID string) (int6
 	return result.LastInsertId()
 }
 
+// SetUserOAuth updates an existing user's OAuth provider and OAuth ID.
+func (s *Store) SetUserOAuth(userID int64, provider, oauthID string) error {
+	_, err := s.DB.Exec(
+		`UPDATE users SET oauth_provider = ?, oauth_id = ? WHERE id = ?`,
+		provider, oauthID, userID,
+	)
+	return err
+}
+
 func scanUser(row scanner) (*User, error) {
 	var user User
 	if err := row.Scan(
