@@ -278,3 +278,114 @@ func TestGetUserByEmail(t *testing.T) {
         t.Fatalf("expected ErrNotFound for missing email, got %v", err)
     }
 }
+
+// TestGetUserByOAuth -> ensures lookup by provider+oauthID works and handles ErrNotFound
+func TestGetUserByOAuth(t *testing.T) {
+    dir := t.TempDir()
+    dbPath := filepath.Join(dir, "test.db")
+
+    conn, err := InitializeDatabase(dbPath)
+    if err != nil {
+        t.Fatalf("InitializeDatabase: %v", err)
+    }
+    defer conn.Close()
+
+    store := NewStore(conn)
+
+    // Create OAuth user
+    uid, err := store.CreateOAuthUser("oauth@example.com", "oauthuser", "github", "12345")
+    if err != nil {
+        t.Fatalf("CreateOAuthUser: %v", err)
+    }
+
+    u, err := store.GetUserByOAuth("github", "12345")
+    if err != nil {
+        t.Fatalf("GetUserByOAuth: %v", err)
+    }
+    if u.ID != uid {
+        t.Fatalf("ID mismatch: got %d want %d", u.ID, uid)
+    }
+
+    // Missing OAuth user
+    _, err = store.GetUserByOAuth("github", "doesnotexist")
+    if err != ErrNotFound {
+        t.Fatalf("expected ErrNotFound for missing OAuth user, got %v", err)
+    }
+}
+
+// TestCreateOAuthUser -> ensures OAuth user creation works and fields are correct
+func TestCreateOAuthUser(t *testing.T) {
+    dir := t.TempDir()
+    dbPath := filepath.Join(dir, "test.db")
+
+    conn, err := InitializeDatabase(dbPath)
+    if err != nil {
+        t.Fatalf("InitializeDatabase: %v", err)
+    }
+    defer conn.Close()
+
+    store := NewStore(conn)
+
+    uid, err := store.CreateOAuthUser("oauth@example.com", "oauthuser", "google", "abc123")
+    if err != nil {
+        t.Fatalf("CreateOAuthUser: %v", err)
+    }
+
+    u, err := store.GetUserByID(uid)
+    if err != nil {
+        t.Fatalf("GetUserByID: %v", err)
+    }
+
+    if u.Email != "oauth@example.com" {
+        t.Fatalf("email mismatch: got %s want %s", u.Email, "oauth@example.com")
+    }
+    if u.Username != "oauthuser" {
+        t.Fatalf("username mismatch: got %s want %s", u.Username, "oauthuser")
+    }
+    if u.OAuthProvider != "google" {
+        t.Fatalf("provider mismatch: got %s want %s", u.OAuthProvider, "google")
+    }
+    if u.OAuthID != "abc123" {
+        t.Fatalf("oauthID mismatch: got %s want %s", u.OAuthID, "abc123")
+    }
+    if u.PasswordHash != "" {
+        t.Fatalf("expected empty password hash for OAuth user, got %s", u.PasswordHash)
+    }
+}
+
+// TestSetUserOAuth -> ensures linking OAuth provider to existing user works
+func TestSetUserOAuth(t *testing.T) {
+    dir := t.TempDir()
+    dbPath := filepath.Join(dir, "test.db")
+
+    conn, err := InitializeDatabase(dbPath)
+    if err != nil {
+        t.Fatalf("InitializeDatabase: %v", err)
+    }
+    defer conn.Close()
+
+    store := NewStore(conn)
+
+    uid, err := store.CreateUser("normal@example.com", "normaluser", "hashpw")
+    if err != nil {
+        t.Fatalf("CreateUser: %v", err)
+    }
+
+    // Link OAuth
+    err = store.SetUserOAuth(uid, "discord", "xyz789")
+    if err != nil {
+        t.Fatalf("SetUserOAuth: %v", err)
+    }
+
+    u, err := store.GetUserByID(uid)
+    if err != nil {
+        t.Fatalf("GetUserByID: %v", err)
+    }
+
+    if u.OAuthProvider != "discord" {
+        t.Fatalf("provider mismatch: got %s want %s", u.OAuthProvider, "discord")
+    }
+    if u.OAuthID != "xyz789" {
+        t.Fatalf("oauthID mismatch: got %s want %s", u.OAuthID, "xyz789")
+    }
+}
