@@ -114,7 +114,13 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 				fullName = dUser.Username + "#" + dUser.Discriminator
 			}
 
-			userID, err := store.CreateOAuthUser(dUser.Email, fullName, provider, oauthID)
+			// Fix during testing: forgot fallback email
+			email := dUser.Email
+			if email == "" {
+				email = dUser.ID + "@discord.local"
+			}
+
+			userID, err := store.CreateOAuthUser(email, fullName, provider, oauthID)
 			if err != nil {
 				RenderError(w, http.StatusInternalServerError, "Failed to create OAuth user.")
 				return
