@@ -62,10 +62,9 @@ var ErrInvalidCategory = errors.New("invalid category")
 
 func (s *Store) CreateUser(email, username, passwordHash string) (int64, error) {
 	result, err := s.DB.Exec(
-		`INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)`,
-		email,
-		username,
-		passwordHash,
+		`INSERT INTO users (email, username, password_hash, oauth_provider, oauth_id)
+         VALUES (?, ?, ?, '', '')`,
+		email, username, passwordHash,
 	)
 	if err != nil {
 		return 0, err
