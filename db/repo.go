@@ -63,7 +63,7 @@ var ErrInvalidCategory = errors.New("invalid category")
 func (s *Store) CreateUser(email, username, passwordHash string) (int64, error) {
 	result, err := s.DB.Exec(
 		`INSERT INTO users (email, username, password_hash, oauth_provider, oauth_id)
-         VALUES (?, ?, ?, '', '')`,
+         VALUES (?, ?, ?, NULL, NULL)`,
 		email, username, passwordHash,
 	)
 	if err != nil {
@@ -133,13 +133,14 @@ func (s *Store) SetUserOAuth(userID int64, provider, oauthID string) error {
 
 func scanUser(row scanner) (*User, error) {
 	var user User
+	var oauthProvider, oauthID sql.NullString
 	if err := row.Scan(
 		&user.ID,
 		&user.Email,
 		&user.Username,
 		&user.PasswordHash,
-		&user.OAuthProvider,
-		&user.OAuthID,
+		&oauthProvider,
+		&oauthID,
 		&user.CreatedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -147,6 +148,8 @@ func scanUser(row scanner) (*User, error) {
 		}
 		return nil, err
 	}
+	user.OAuthProvider = oauthProvider.String
+	user.OAuthID = oauthID.String
 	return &user, nil
 }
 
