@@ -41,6 +41,10 @@ func main() {
 	mux.Handle("/auth/google", handlers.GoogleLoginHandler(store))
 	mux.Handle("/auth/google/callback", handlers.GoogleCallbackHandler(store))
 
+	// Discord OAuth routes
+	mux.Handle("/auth/discord", handlers.DiscordLoginHandler(store))
+	mux.Handle("/auth/discord/callback", handlers.DiscordCallbackHandler(store))
+
 	// 4. Logout (requires auth)
 	mux.Handle("/logout", middleware.RequireAuth(store, handlers.LogoutHandler(store)))
 
