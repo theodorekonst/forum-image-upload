@@ -15,16 +15,20 @@ import (
 // GitHubLoginHandler begins the OAuth flow by redirecting the user to GitHub's authorization page.
 func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		state, err := generateOAuthState()
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Failed to start GitHub login.")
+			return
+		}
+		setOAuthStateCookie(w, state)
 
-		// Build GitHub OAuth authorization URL
 		params := url.Values{}
 		params.Add("client_id", config.GitHubClientID)
 		params.Add("redirect_uri", config.RedirectURL("/auth/github/callback"))
-		params.Add("scope", "user:email") // required to access verified email addresses
+		params.Add("scope", "user:email")
+		params.Add("state", state)
 
 		authURL := "https://github.com/login/oauth/authorize?" + params.Encode()
-
-		// Redirect user to GitHub OAuth
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}
 }
@@ -33,14 +37,19 @@ func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// 1. Extract authorization code from query parameters
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			RenderError(w, http.StatusBadRequest, "Missing authorization code.")
 			return
 		}
 
-		// 2. Exchange authorization code for an access token
+		state := r.URL.Query().Get("state")
+		if !validateOAuthState(r, state) {
+			RenderError(w, http.StatusBadRequest, "Invalid OAuth state.")
+			return
+		}
+		clearOAuthStateCookie(w)
+
 		clientID := config.GitHubClientID
 		clientSecret := config.GitHubClientSecret
 

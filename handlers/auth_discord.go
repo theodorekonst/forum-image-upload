@@ -14,18 +14,22 @@ import (
 // DiscordLoginHandler begins the OAuth flow by redirecting the user to Discord's authorization page.
 func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		state, err := generateOAuthState()
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Failed to start Discord login.")
+			return
+		}
+		setOAuthStateCookie(w, state)
 
 		authBase := "https://discord.com/api/oauth2/authorize"
-
 		params := url.Values{}
 		params.Add("client_id", config.DiscordClientID)
 		params.Add("redirect_uri", config.RedirectURL("/auth/discord/callback"))
 		params.Add("response_type", "code")
 		params.Add("scope", "identify email")
+		params.Add("state", state)
 
 		authURL := authBase + "?" + params.Encode()
-
-		// Redirect user to Discord OAuth
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}
 }
@@ -34,14 +38,19 @@ func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// 1. Extract authorization code from query parameters
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			RenderError(w, http.StatusBadRequest, "Missing authorization code.")
 			return
 		}
 
-		// 2. Exchange authorization code for an access token
+		state := r.URL.Query().Get("state")
+		if !validateOAuthState(r, state) {
+			RenderError(w, http.StatusBadRequest, "Invalid OAuth state.")
+			return
+		}
+		clearOAuthStateCookie(w)
+
 		tokenURL := "https://discord.com/api/oauth2/token"
 
 		tokenReqBody := url.Values{}

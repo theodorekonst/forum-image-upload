@@ -13,19 +13,23 @@ import (
 // GoogleLoginHandler begins the OAuth flow by redirecting the user to Google's authorization page.
 func GoogleLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		state, err := generateOAuthState()
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Failed to start Google login.")
+			return
+		}
+		setOAuthStateCookie(w, state)
 
-		// Build Google OAuth authorization URL
 		params := url.Values{}
 		params.Add("client_id", config.GoogleClientID)
 		params.Add("redirect_uri", config.RedirectURL("/auth/google/callback"))
 		params.Add("response_type", "code")
 		params.Add("scope", "email profile")
-		params.Add("access_type", "offline") // allows refresh tokens
-		params.Add("prompt", "consent")      // forces consent screen every time
+		params.Add("access_type", "offline")
+		params.Add("prompt", "consent")
+		params.Add("state", state)
 
 		authURL := "https://accounts.google.com/o/oauth2/v2/auth?" + params.Encode()
-
-		// Redirect user to Google OAuth
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}
 }
@@ -34,14 +38,19 @@ func GoogleLoginHandler(store *db.Store) http.HandlerFunc {
 func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// 1. Extract authorization code from query parameters
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			RenderError(w, http.StatusBadRequest, "Missing authorization code.")
 			return
 		}
 
-		// 2. Exchange authorization code for an access token
+		state := r.URL.Query().Get("state")
+		if !validateOAuthState(r, state) {
+			RenderError(w, http.StatusBadRequest, "Invalid OAuth state.")
+			return
+		}
+		clearOAuthStateCookie(w)
+
 		tokenReqBody := url.Values{}
 		tokenReqBody.Set("client_id", config.GoogleClientID)
 		tokenReqBody.Set("client_secret", config.GoogleClientSecret)
