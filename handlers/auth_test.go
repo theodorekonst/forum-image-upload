@@ -517,9 +517,18 @@ func TestLogoutHandler_Valid(t *testing.T) {
 		t.Fatalf("expected session to be deleted, got %v", err)
 	}
 
-	// Cookie should be cleared
+	// Cookie should be cleared with the same shared policy
 	cookies := w.Result().Cookies()
 	if len(cookies) == 0 || cookies[0].Value != "" {
 		t.Fatalf("expected cleared cookie")
+	}
+	if cookies[0].Path != "/" {
+		t.Fatalf("expected cleared cookie path '/', got %q", cookies[0].Path)
+	}
+	if cookies[0].SameSite != http.SameSiteLaxMode {
+		t.Fatalf("expected cleared cookie SameSite=Lax, got %v", cookies[0].SameSite)
+	}
+	if !cookies[0].HttpOnly {
+		t.Fatalf("expected cleared cookie HttpOnly=true")
 	}
 }

@@ -222,7 +222,6 @@ func TestCreateSessionAndSetCookie(t *testing.T) {
 		t.Fatalf("CreateSessionAndSetCookie: %v", err)
 	}
 
-	// cookie must exist
 	found := false
 	for _, c := range w.Result().Cookies() {
 		if c.Name == "session" {
@@ -230,9 +229,43 @@ func TestCreateSessionAndSetCookie(t *testing.T) {
 			if c.SameSite != http.SameSiteLaxMode {
 				t.Fatalf("expected session cookie SameSite=Lax, got %v", c.SameSite)
 			}
+			if c.Path != "/" {
+				t.Fatalf("expected session cookie path '/', got %q", c.Path)
+			}
+			if !c.HttpOnly {
+				t.Fatalf("expected session cookie HttpOnly=true")
+			}
 		}
 	}
 	if !found {
 		t.Fatalf("expected session cookie")
+	}
+}
+
+func TestOAuthStateCookiePolicy(t *testing.T) {
+	store := newTestStore(t)
+
+	req := httptest.NewRequest("GET", "/auth/google/login", nil)
+	w := httptest.NewRecorder()
+
+	GoogleLoginHandler(store).ServeHTTP(w, req)
+
+	found := false
+	for _, c := range w.Result().Cookies() {
+		if c.Name == oauthStateCookieName {
+			found = true
+			if c.SameSite != http.SameSiteLaxMode {
+				t.Fatalf("expected oauth_state cookie SameSite=Lax, got %v", c.SameSite)
+			}
+			if c.Path != "/" {
+				t.Fatalf("expected oauth_state cookie path '/', got %q", c.Path)
+			}
+			if !c.HttpOnly {
+				t.Fatalf("expected oauth_state cookie HttpOnly=true")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected oauth_state cookie")
 	}
 }
