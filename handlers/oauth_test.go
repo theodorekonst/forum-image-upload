@@ -153,6 +153,15 @@ func TestDiscordCallbackHandler_MissingCode(t *testing.T) {
 // ------------------------------------------------------------
 //
 
+func TestNormalizeDiscordUsername(t *testing.T) {
+	if got := normalizeDiscordUsername("katerina.kas", "0"); got != "katerina.kas" {
+		t.Fatalf("expected username without discriminator, got %q", got)
+	}
+	if got := normalizeDiscordUsername("katerina.kas", "1234"); got != "katerina.kas#1234" {
+		t.Fatalf("expected username with discriminator, got %q", got)
+	}
+}
+
 func TestCreateOrLinkOAuthUser_NewUser(t *testing.T) {
 	store := newTestStore(t)
 

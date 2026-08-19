@@ -11,6 +11,16 @@ import (
 	"strings"
 )
 
+func normalizeDiscordUsername(username, discriminator string) string {
+	if username == "" {
+		username = "discord_user"
+	}
+	if discriminator != "" && discriminator != "0" {
+		return username + "#" + discriminator
+	}
+	return username
+}
+
 // DiscordLoginHandler begins the OAuth flow by redirecting the user to Discord's authorization page.
 func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -136,14 +146,8 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 		provider := "discord"
 		oauthID := dUser.ID
 
-		// Build a display username (fallback if missing)
-		uname := dUser.Username
-		if uname == "" {
-			uname = "discord_user"
-		}
-		if dUser.Discriminator != "" {
-			uname = uname + "#" + dUser.Discriminator
-		}
+		// Build a display username without forcing a legacy discriminator when Discord has migrated to username-only accounts.
+		uname := normalizeDiscordUsername(dUser.Username, dUser.Discriminator)
 
 		user, err := CreateOrLinkOAuthUser(store, provider, oauthID, dUser.Email, uname)
 		if err != nil {
