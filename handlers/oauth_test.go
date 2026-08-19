@@ -40,8 +40,12 @@ func TestGoogleLoginHandler_Redirect(t *testing.T) {
 		t.Fatalf("expected redirect, got %d", w.Code)
 	}
 
-	if w.Header().Get("Location") == "" {
+	location := w.Header().Get("Location")
+	if location == "" {
 		t.Fatalf("expected Location header")
+	}
+	if !contains(location, "state=") {
+		t.Fatalf("expected OAuth state in redirect URL, got %q", location)
 	}
 }
 
@@ -57,8 +61,12 @@ func TestGitHubLoginHandler_Redirect(t *testing.T) {
 		t.Fatalf("expected redirect, got %d", w.Code)
 	}
 
-	if w.Header().Get("Location") == "" {
+	location := w.Header().Get("Location")
+	if location == "" {
 		t.Fatalf("expected Location header")
+	}
+	if !contains(location, "state=") {
+		t.Fatalf("expected OAuth state in redirect URL, got %q", location)
 	}
 }
 
@@ -74,8 +82,12 @@ func TestDiscordLoginHandler_Redirect(t *testing.T) {
 		t.Fatalf("expected redirect, got %d", w.Code)
 	}
 
-	if w.Header().Get("Location") == "" {
+	location := w.Header().Get("Location")
+	if location == "" {
 		t.Fatalf("expected Location header")
+	}
+	if !contains(location, "state=") {
+		t.Fatalf("expected OAuth state in redirect URL, got %q", location)
 	}
 }
 
@@ -96,6 +108,17 @@ func TestGoogleCallbackHandler_MissingCode(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Code)
 	}
+}
+
+func contains(s, sub string) bool {
+	return len(sub) == 0 || (len(s) >= len(sub) && (func() bool {
+		for i := 0; i+len(sub) <= len(s); i++ {
+			if s[i:i+len(sub)] == sub {
+				return true
+			}
+		}
+		return false
+	})())
 }
 
 func TestGitHubCallbackHandler_MissingCode(t *testing.T) {
