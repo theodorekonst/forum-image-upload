@@ -1,25 +1,28 @@
 package config
 
 import (
-	"log"
+	"fmt"
+	"net/url"
 	"os"
 	"strings"
 )
 
+const defaultAppBaseURL = "http://localhost:8080"
+
 var (
-	AppBaseURL = getenvDefault("APP_BASE_URL", "http://localhost:8080")
+	AppBaseURL = defaultAppBaseURL
 
 	// GitHub
-	GitHubClientID     = os.Getenv("GITHUB_CLIENT_ID")
-	GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
+	GitHubClientID     = ""
+	GitHubClientSecret = ""
 
 	// Google
-	GoogleClientID     = os.Getenv("GOOGLE_CLIENT_ID")
-	GoogleClientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
+	GoogleClientID     = ""
+	GoogleClientSecret = ""
 
 	// Discord
-	DiscordClientID     = os.Getenv("DISCORD_CLIENT_ID")
-	DiscordClientSecret = os.Getenv("DISCORD_CLIENT_SECRET")
+	DiscordClientID     = ""
+	DiscordClientSecret = ""
 )
 
 func getenvDefault(key, fallback string) string {
@@ -30,20 +33,41 @@ func getenvDefault(key, fallback string) string {
 	return value
 }
 
+func validateBaseURL(raw string) error {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return err
+	}
+	if parsed.Scheme == "" || parsed.Host == "" {
+		return fmt.Errorf("URL must include scheme and host")
+	}
+	return nil
+}
+
 func RedirectURL(path string) string {
 	return strings.TrimRight(AppBaseURL, "/") + path
 }
 
-func Load() {
+func Load() error {
+	AppBaseURL = getenvDefault("APP_BASE_URL", defaultAppBaseURL)
+	GitHubClientID = strings.TrimSpace(os.Getenv("GITHUB_CLIENT_ID"))
+	GitHubClientSecret = strings.TrimSpace(os.Getenv("GITHUB_CLIENT_SECRET"))
+	GoogleClientID = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID"))
+	GoogleClientSecret = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_SECRET"))
+	DiscordClientID = strings.TrimSpace(os.Getenv("DISCORD_CLIENT_ID"))
+	DiscordClientSecret = strings.TrimSpace(os.Getenv("DISCORD_CLIENT_SECRET"))
+
+	if err := validateBaseURL(AppBaseURL); err != nil {
+		return fmt.Errorf("invalid APP_BASE_URL: %w", err)
+	}
 	if GitHubClientID == "" || GitHubClientSecret == "" {
-		log.Fatal("Missing GitHub OAuth environment variables")
+		return fmt.Errorf("missing GitHub OAuth environment variables")
 	}
-
 	if GoogleClientID == "" || GoogleClientSecret == "" {
-		log.Fatal("Missing Google OAuth environment variables")
+		return fmt.Errorf("missing Google OAuth environment variables")
 	}
-
 	if DiscordClientID == "" || DiscordClientSecret == "" {
-		log.Fatal("Missing Discord OAuth environment variables")
+		return fmt.Errorf("missing Discord OAuth environment variables")
 	}
+	return nil
 }

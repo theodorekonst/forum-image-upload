@@ -11,7 +11,9 @@ import (
 
 func main() {
 
-	config.Load()
+	if err := config.Load(); err != nil {
+		log.Fatal(err)
+	}
 
 	// 1. Initialise database
 	connection, err := db.InitializeDatabase("forum.db")
