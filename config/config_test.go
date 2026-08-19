@@ -14,10 +14,6 @@ func TestLoad_Success(t *testing.T) {
 		"GOOGLE_CLIENT_SECRET":  "google-secret",
 		"DISCORD_CLIENT_ID":     "disc-id",
 		"DISCORD_CLIENT_SECRET": "disc-secret",
-		"DISCORD_REDIRECT_URL":  "http://localhost/callback",
-		"DISCORD_AUTH_URL":      "https://discord.com/api/oauth2/authorize",
-		"DISCORD_TOKEN_URL":     "https://discord.com/api/oauth2/token",
-		"DISCORD_USERINFO_URL":  "https://discord.com/api/users/@me",
 	}); exitCode != 0 {
 		t.Fatalf("Load() should succeed with valid config, got exit code %d", exitCode)
 	}
@@ -31,10 +27,6 @@ func TestLoad_MissingGitHubConfig(t *testing.T) {
 		"GOOGLE_CLIENT_SECRET":  "google-secret",
 		"DISCORD_CLIENT_ID":     "disc-id",
 		"DISCORD_CLIENT_SECRET": "disc-secret",
-		"DISCORD_REDIRECT_URL":  "http://localhost/callback",
-		"DISCORD_AUTH_URL":      "https://discord.com/api/oauth2/authorize",
-		"DISCORD_TOKEN_URL":     "https://discord.com/api/oauth2/token",
-		"DISCORD_USERINFO_URL":  "https://discord.com/api/users/@me",
 	}); exitCode == 0 {
 		t.Fatal("Load() should fail when GitHub config is missing")
 	}
@@ -48,10 +40,6 @@ func TestLoad_MissingGoogleConfig(t *testing.T) {
 		"GOOGLE_CLIENT_SECRET":  "",
 		"DISCORD_CLIENT_ID":     "disc-id",
 		"DISCORD_CLIENT_SECRET": "disc-secret",
-		"DISCORD_REDIRECT_URL":  "http://localhost/callback",
-		"DISCORD_AUTH_URL":      "https://discord.com/api/oauth2/authorize",
-		"DISCORD_TOKEN_URL":     "https://discord.com/api/oauth2/token",
-		"DISCORD_USERINFO_URL":  "https://discord.com/api/users/@me",
 	}); exitCode == 0 {
 		t.Fatal("Load() should fail when Google config is missing")
 	}
@@ -65,12 +53,18 @@ func TestLoad_MissingDiscordConfig(t *testing.T) {
 		"GOOGLE_CLIENT_SECRET":  "google-secret",
 		"DISCORD_CLIENT_ID":     "",
 		"DISCORD_CLIENT_SECRET": "",
-		"DISCORD_REDIRECT_URL":  "",
-		"DISCORD_AUTH_URL":      "https://discord.com/api/oauth2/authorize",
-		"DISCORD_TOKEN_URL":     "https://discord.com/api/oauth2/token",
-		"DISCORD_USERINFO_URL":  "https://discord.com/api/users/@me",
 	}); exitCode == 0 {
 		t.Fatal("Load() should fail when Discord config is missing")
+	}
+}
+
+func TestRedirectURL(t *testing.T) {
+	originalBase := AppBaseURL
+	AppBaseURL = "http://localhost:8080"
+	defer func() { AppBaseURL = originalBase }()
+
+	if got, want := RedirectURL("/auth/github/callback"), "http://localhost:8080/auth/github/callback"; got != want {
+		t.Fatalf("RedirectURL() = %q, want %q", got, want)
 	}
 }
 
