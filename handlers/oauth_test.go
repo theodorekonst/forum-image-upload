@@ -227,6 +227,9 @@ func TestCreateSessionAndSetCookie(t *testing.T) {
 	for _, c := range w.Result().Cookies() {
 		if c.Name == "session" {
 			found = true
+			if c.SameSite != http.SameSiteLaxMode {
+				t.Fatalf("expected session cookie SameSite=Lax, got %v", c.SameSite)
+			}
 		}
 	}
 	if !found {

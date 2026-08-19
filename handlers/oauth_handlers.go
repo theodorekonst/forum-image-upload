@@ -59,7 +59,7 @@ func setSessionCookie(w http.ResponseWriter, token string, expiresAt time.Time) 
 		Path:     "/",
 		Expires:  expiresAt,
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
@@ -71,7 +71,7 @@ func clearSessionCookie(w http.ResponseWriter) {
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
