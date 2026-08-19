@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -131,24 +129,11 @@ func RegisterHandler(store *db.Store) http.HandlerFunc {
 			}
 
 			// 7. Auto-login after successful registration
-			token := uuid.New().String()
-			expiresAt := time.Now().Add(24 * time.Hour)
-
-			_, err = store.CreateSession(newUserID, token, expiresAt)
-			if err != nil {
+			if _, err = IssueSession(w, store, newUserID); err != nil {
 				log.Println("error creating session:", err)
 				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
-
-			http.SetCookie(w, &http.Cookie{
-				Name:     "session",
-				Value:    token,
-				Path:     "/",
-				Expires:  expiresAt,
-				HttpOnly: true,
-				SameSite: http.SameSiteStrictMode,
-			})
 
 			// Redirect to home
 			http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -223,37 +208,11 @@ func LoginHandler(store *db.Store) http.HandlerFunc {
 			}
 
 			// 5. Session & Cookie Handling
-			// Delete old sessions
-			if err := store.DeleteSessionsByUserID(user.ID); err != nil {
-				log.Println("error deleting old sessions:", err)
-				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
-				return
-			}
-
-			// Generate new token
-			token := uuid.New().String()
-
-			// Create session in database
-			expiresAt := time.Now().Add(24 * time.Hour)
-			_, err = store.CreateSession(user.ID, token, expiresAt)
-			if err != nil {
+			if _, err = IssueSession(w, store, user.ID); err != nil {
 				log.Println("error creating session:", err)
 				RenderError(w, http.StatusInternalServerError, "Something went wrong. Please try again.")
 				return
 			}
-
-			// Set cookie
-			http.SetCookie(w, &http.Cookie{
-				Name:  "session",
-				Value: token,
-				Path:  "/",
-				// Domain -> in production when there are subdomains
-				Expires: expiresAt,
-				// MaxAge -> alternative to Expires (MaxAge: 86400)
-				Secure:   false, // in production, true
-				HttpOnly: true,
-				SameSite: http.SameSiteStrictMode,
-			})
 
 			// 6. Redirect to home
 			http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -291,16 +250,7 @@ func LogoutHandler(store *db.Store) http.HandlerFunc {
 			}
 
 			// 3. Clear cookie
-			http.SetCookie(w, &http.Cookie{
-				Name:     "session",
-				Value:    "",
-				Path:     "/",
-				Expires:  time.Unix(0, 0), // expires immediately
-				MaxAge:   -1,              // deletes immediately
-				Secure:   false,           // in production, true
-				HttpOnly: true,
-				SameSite: http.SameSiteStrictMode,
-			})
+			clearSessionCookie(w)
 
 			// 4. Redirect to home
 			http.Redirect(w, r, "/", http.StatusSeeOther)

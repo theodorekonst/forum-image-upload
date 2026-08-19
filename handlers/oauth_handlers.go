@@ -52,6 +52,45 @@ func validateOAuthState(r *http.Request, expected string) bool {
 	return subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(expected)) == 1
 }
 
+func setSessionCookie(w http.ResponseWriter, token string, expiresAt time.Time) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    token,
+		Path:     "/",
+		Expires:  expiresAt,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func clearSessionCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func IssueSession(w http.ResponseWriter, store *db.Store, userID int64) (string, error) {
+	if err := store.DeleteSessionsByUserID(userID); err != nil {
+		return "", err
+	}
+
+	token := uuid.New().String()
+	expiresAt := time.Now().Add(24 * time.Hour)
+
+	if _, err := store.CreateSession(userID, token, expiresAt); err != nil {
+		return "", err
+	}
+
+	setSessionCookie(w, token, expiresAt)
+	return token, nil
+}
+
 func CreateOrLinkOAuthUser(store *db.Store, provider, oauthID, email, username string) (*db.User, error) {
 	user, err := store.GetUserByOAuth(provider, oauthID)
 	if err == nil {
@@ -83,22 +122,6 @@ func CreateOrLinkOAuthUser(store *db.Store, provider, oauthID, email, username s
 }
 
 func CreateSessionAndSetCookie(w http.ResponseWriter, store *db.Store, user *db.User) error {
-	token := uuid.New().String()
-	expiresAt := time.Now().Add(24 * time.Hour)
-
-	_, err := store.CreateSession(user.ID, token, expiresAt)
-	if err != nil {
-		return err
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    token,
-		Path:     "/",
-		Expires:  expiresAt,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	return nil
+	_, err := IssueSession(w, store, user.ID)
+	return err
 }

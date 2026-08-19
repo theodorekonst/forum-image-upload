@@ -40,10 +40,10 @@ func GetUserFromRequest(store *db.Store, r *http.Request) (*db.User, error) {
 func RequireAuth(store *db.Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// Try to get user from session
+		// If the session is missing, expired, or invalid, send the user back to the public home page.
 		user, err := GetUserFromRequest(store, r)
 		if err != nil || user == nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
