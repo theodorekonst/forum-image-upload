@@ -1,97 +1,84 @@
 package config
 
-import (
-	"os"
-	"os/exec"
-	"testing"
-)
+import "testing"
 
 func TestLoad_Success(t *testing.T) {
-	if exitCode := runLoadCase(t, map[string]string{
-		"GITHUB_CLIENT_ID":      "gh-id",
-		"GITHUB_CLIENT_SECRET":  "gh-secret",
-		"GOOGLE_CLIENT_ID":      "google-id",
-		"GOOGLE_CLIENT_SECRET":  "google-secret",
-		"DISCORD_CLIENT_ID":     "disc-id",
-		"DISCORD_CLIENT_SECRET": "disc-secret",
-	}); exitCode != 0 {
-		t.Fatalf("Load() should succeed with valid config, got exit code %d", exitCode)
+	t.Setenv("APP_BASE_URL", "http://localhost:8080")
+	t.Setenv("GITHUB_CLIENT_ID", "gh-id")
+	t.Setenv("GITHUB_CLIENT_SECRET", "gh-secret")
+	t.Setenv("GOOGLE_CLIENT_ID", "google-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
+	t.Setenv("DISCORD_CLIENT_ID", "disc-id")
+	t.Setenv("DISCORD_CLIENT_SECRET", "disc-secret")
+
+	if err := Load(); err != nil {
+		t.Fatalf("Load() should succeed with valid config: %v", err)
 	}
 }
 
 func TestLoad_MissingGitHubConfig(t *testing.T) {
-	if exitCode := runLoadCase(t, map[string]string{
-		"GITHUB_CLIENT_ID":      "",
-		"GITHUB_CLIENT_SECRET":  "",
-		"GOOGLE_CLIENT_ID":      "google-id",
-		"GOOGLE_CLIENT_SECRET":  "google-secret",
-		"DISCORD_CLIENT_ID":     "disc-id",
-		"DISCORD_CLIENT_SECRET": "disc-secret",
-	}); exitCode == 0 {
+	t.Setenv("APP_BASE_URL", "http://localhost:8080")
+	t.Setenv("GITHUB_CLIENT_ID", "")
+	t.Setenv("GITHUB_CLIENT_SECRET", "")
+	t.Setenv("GOOGLE_CLIENT_ID", "google-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
+	t.Setenv("DISCORD_CLIENT_ID", "disc-id")
+	t.Setenv("DISCORD_CLIENT_SECRET", "disc-secret")
+
+	if err := Load(); err == nil {
 		t.Fatal("Load() should fail when GitHub config is missing")
 	}
 }
 
 func TestLoad_MissingGoogleConfig(t *testing.T) {
-	if exitCode := runLoadCase(t, map[string]string{
-		"GITHUB_CLIENT_ID":      "gh-id",
-		"GITHUB_CLIENT_SECRET":  "gh-secret",
-		"GOOGLE_CLIENT_ID":      "",
-		"GOOGLE_CLIENT_SECRET":  "",
-		"DISCORD_CLIENT_ID":     "disc-id",
-		"DISCORD_CLIENT_SECRET": "disc-secret",
-	}); exitCode == 0 {
+	t.Setenv("APP_BASE_URL", "http://localhost:8080")
+	t.Setenv("GITHUB_CLIENT_ID", "gh-id")
+	t.Setenv("GITHUB_CLIENT_SECRET", "gh-secret")
+	t.Setenv("GOOGLE_CLIENT_ID", "")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "")
+	t.Setenv("DISCORD_CLIENT_ID", "disc-id")
+	t.Setenv("DISCORD_CLIENT_SECRET", "disc-secret")
+
+	if err := Load(); err == nil {
 		t.Fatal("Load() should fail when Google config is missing")
 	}
 }
 
 func TestLoad_MissingDiscordConfig(t *testing.T) {
-	if exitCode := runLoadCase(t, map[string]string{
-		"GITHUB_CLIENT_ID":      "gh-id",
-		"GITHUB_CLIENT_SECRET":  "gh-secret",
-		"GOOGLE_CLIENT_ID":      "google-id",
-		"GOOGLE_CLIENT_SECRET":  "google-secret",
-		"DISCORD_CLIENT_ID":     "",
-		"DISCORD_CLIENT_SECRET": "",
-	}); exitCode == 0 {
+	t.Setenv("APP_BASE_URL", "http://localhost:8080")
+	t.Setenv("GITHUB_CLIENT_ID", "gh-id")
+	t.Setenv("GITHUB_CLIENT_SECRET", "gh-secret")
+	t.Setenv("GOOGLE_CLIENT_ID", "google-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
+	t.Setenv("DISCORD_CLIENT_ID", "")
+	t.Setenv("DISCORD_CLIENT_SECRET", "")
+
+	if err := Load(); err == nil {
 		t.Fatal("Load() should fail when Discord config is missing")
 	}
 }
 
+func TestLoad_InvalidAppBaseURL(t *testing.T) {
+	t.Setenv("APP_BASE_URL", "localhost:8080")
+	t.Setenv("GITHUB_CLIENT_ID", "gh-id")
+	t.Setenv("GITHUB_CLIENT_SECRET", "gh-secret")
+	t.Setenv("GOOGLE_CLIENT_ID", "google-id")
+	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
+	t.Setenv("DISCORD_CLIENT_ID", "disc-id")
+	t.Setenv("DISCORD_CLIENT_SECRET", "disc-secret")
+
+	if err := Load(); err == nil {
+		t.Fatal("Load() should fail when APP_BASE_URL is invalid")
+	}
+}
+
 func TestRedirectURL(t *testing.T) {
-	originalBase := AppBaseURL
-	AppBaseURL = "http://localhost:8080"
-	defer func() { AppBaseURL = originalBase }()
+	t.Setenv("APP_BASE_URL", "http://localhost:8080")
+	if err := Load(); err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
 
 	if got, want := RedirectURL("/auth/github/callback"), "http://localhost:8080/auth/github/callback"; got != want {
 		t.Fatalf("RedirectURL() = %q, want %q", got, want)
 	}
-}
-
-func runLoadCase(t *testing.T, values map[string]string) int {
-	t.Helper()
-
-	env := os.Environ()
-	for key, value := range values {
-		env = append(env, key+"="+value)
-	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestLoadHelperProcess")
-	cmd.Env = append(env, "GO_WANT_HELPER_PROCESS=1")
-
-	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return exitErr.ExitCode()
-		}
-		return 1
-	}
-	return 0
-}
-
-func TestLoadHelperProcess(t *testing.T) {
-	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
-		return
-	}
-
-	Load()
-	os.Exit(0)
 }
