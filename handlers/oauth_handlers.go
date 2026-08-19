@@ -14,6 +14,8 @@ import (
 
 const oauthStateCookieName = "oauth_state"
 
+var oauthHTTPClient = &http.Client{Timeout: 10 * time.Second}
+
 func generateOAuthState() (string, error) {
 	bytes := make([]byte, 16)
 	if _, err := rand.Read(bytes); err != nil {

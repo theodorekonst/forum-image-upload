@@ -68,7 +68,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Set("Accept", "application/json")
 
-		tokenResp, err := http.DefaultClient.Do(req)
+		tokenResp, err := oauthHTTPClient.Do(req)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to exchange code for token.")
 			return
@@ -97,7 +97,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		reqUser.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
 		reqUser.Header.Set("Accept", "application/vnd.github+json")
 
-		userResp, err := http.DefaultClient.Do(reqUser)
+		userResp, err := oauthHTTPClient.Do(reqUser)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to fetch GitHub user.")
 			return
@@ -130,7 +130,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 			reqEmails.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
 			reqEmails.Header.Set("Accept", "application/vnd.github+json")
 
-			emailsResp, err := http.DefaultClient.Do(reqEmails)
+			emailsResp, err := oauthHTTPClient.Do(reqEmails)
 			if err == nil {
 				defer emailsResp.Body.Close()
 

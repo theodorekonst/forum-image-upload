@@ -65,7 +65,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 		)
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		tokenResp, err := http.DefaultClient.Do(req)
+		tokenResp, err := oauthHTTPClient.Do(req)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to exchange code for token.")
 			return
@@ -94,7 +94,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 		reqUser, _ := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
 		reqUser.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
 
-		userResp, err := http.DefaultClient.Do(reqUser)
+		userResp, err := oauthHTTPClient.Do(reqUser)
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to fetch Google user.")
 			return
