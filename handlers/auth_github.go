@@ -19,7 +19,7 @@ func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 		// Build GitHub OAuth authorization URL
 		params := url.Values{}
 		params.Add("client_id", config.GitHubClientID)
-		params.Add("redirect_uri", "http://localhost:8080/auth/github/callback")
+		params.Add("redirect_uri", config.RedirectURL("/auth/github/callback"))
 		params.Add("scope", "user:email") // required to access verified email addresses
 
 		authURL := "https://github.com/login/oauth/authorize?" + params.Encode()
@@ -48,7 +48,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		tokenReqBody.Set("client_id", clientID)
 		tokenReqBody.Set("client_secret", clientSecret)
 		tokenReqBody.Set("code", code)
-		tokenReqBody.Set("redirect_uri", "http://localhost:8080/auth/github/callback")
+		tokenReqBody.Set("redirect_uri", config.RedirectURL("/auth/github/callback"))
 
 		// GitHub requires Accept: application/json for token responses
 		req, _ := http.NewRequest(

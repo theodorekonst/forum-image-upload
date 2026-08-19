@@ -3,9 +3,12 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 )
 
 var (
+	AppBaseURL = getenvDefault("APP_BASE_URL", "http://localhost:8080")
+
 	// GitHub
 	GitHubClientID     = os.Getenv("GITHUB_CLIENT_ID")
 	GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
@@ -17,25 +20,30 @@ var (
 	// Discord
 	DiscordClientID     = os.Getenv("DISCORD_CLIENT_ID")
 	DiscordClientSecret = os.Getenv("DISCORD_CLIENT_SECRET")
-	DiscordRedirectURL  = os.Getenv("DISCORD_REDIRECT_URL")
-	DiscordAuthURL      = os.Getenv("DISCORD_AUTH_URL")
-	DiscordTokenURL     = os.Getenv("DISCORD_TOKEN_URL")
-	DiscordUserInfoURL  = os.Getenv("DISCORD_USERINFO_URL")
 )
 
+func getenvDefault(key, fallback string) string {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	return value
+}
+
+func RedirectURL(path string) string {
+	return strings.TrimRight(AppBaseURL, "/") + path
+}
+
 func Load() {
-	// GitHub required
 	if GitHubClientID == "" || GitHubClientSecret == "" {
 		log.Fatal("Missing GitHub OAuth environment variables")
 	}
 
-	// Google required
 	if GoogleClientID == "" || GoogleClientSecret == "" {
 		log.Fatal("Missing Google OAuth environment variables")
 	}
 
-	// Discord required
-	if DiscordClientID == "" || DiscordClientSecret == "" || DiscordRedirectURL == "" {
+	if DiscordClientID == "" || DiscordClientSecret == "" {
 		log.Fatal("Missing Discord OAuth environment variables")
 	}
 }

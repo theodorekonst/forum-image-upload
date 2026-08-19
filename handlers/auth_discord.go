@@ -15,18 +15,13 @@ import (
 func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Determine authorization endpoint (fallback to default if not configured)
-		authBase := config.DiscordAuthURL
-		if authBase == "" {
-			authBase = "https://discord.com/api/oauth2/authorize"
-		}
+		authBase := "https://discord.com/api/oauth2/authorize"
 
-		// Build Discord OAuth authorization URL
 		params := url.Values{}
 		params.Add("client_id", config.DiscordClientID)
-		params.Add("redirect_uri", config.DiscordRedirectURL)
+		params.Add("redirect_uri", config.RedirectURL("/auth/discord/callback"))
 		params.Add("response_type", "code")
-		params.Add("scope", "identify email") // request basic profile + email
+		params.Add("scope", "identify email")
 
 		authURL := authBase + "?" + params.Encode()
 
@@ -47,17 +42,14 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 
 		// 2. Exchange authorization code for an access token
-		tokenURL := config.DiscordTokenURL
-		if tokenURL == "" {
-			tokenURL = "https://discord.com/api/oauth2/token"
-		}
+		tokenURL := "https://discord.com/api/oauth2/token"
 
 		tokenReqBody := url.Values{}
 		tokenReqBody.Set("client_id", config.DiscordClientID)
 		tokenReqBody.Set("client_secret", config.DiscordClientSecret)
 		tokenReqBody.Set("grant_type", "authorization_code")
 		tokenReqBody.Set("code", code)
-		tokenReqBody.Set("redirect_uri", config.DiscordRedirectURL)
+		tokenReqBody.Set("redirect_uri", config.RedirectURL("/auth/discord/callback"))
 
 		req, _ := http.NewRequest("POST", tokenURL, strings.NewReader(tokenReqBody.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -97,10 +89,7 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 
 		// 3. Retrieve Discord user profile using the access token
-		userInfoURL := config.DiscordUserInfoURL
-		if userInfoURL == "" {
-			userInfoURL = "https://discord.com/api/users/@me"
-		}
+		userInfoURL := "https://discord.com/api/users/@me"
 
 		reqUser, _ := http.NewRequest("GET", userInfoURL, nil)
 		reqUser.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)

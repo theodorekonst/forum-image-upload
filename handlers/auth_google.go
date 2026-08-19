@@ -17,7 +17,7 @@ func GoogleLoginHandler(store *db.Store) http.HandlerFunc {
 		// Build Google OAuth authorization URL
 		params := url.Values{}
 		params.Add("client_id", config.GoogleClientID)
-		params.Add("redirect_uri", "http://localhost:8080/auth/google/callback")
+		params.Add("redirect_uri", config.RedirectURL("/auth/google/callback"))
 		params.Add("response_type", "code")
 		params.Add("scope", "email profile")
 		params.Add("access_type", "offline") // allows refresh tokens
@@ -47,7 +47,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 		tokenReqBody.Set("client_secret", config.GoogleClientSecret)
 		tokenReqBody.Set("code", code)
 		tokenReqBody.Set("grant_type", "authorization_code")
-		tokenReqBody.Set("redirect_uri", "http://localhost:8080/auth/google/callback")
+		tokenReqBody.Set("redirect_uri", config.RedirectURL("/auth/google/callback"))
 
 		req, _ := http.NewRequest(
 			"POST",
