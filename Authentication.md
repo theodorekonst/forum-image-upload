@@ -44,10 +44,11 @@ and finally merged into `main` when stable.
 ### Files to Create / Modify
 
 ```text
-handlers/auth_github.go      (NEW)
-handlers/auth.go
+handlers/oauth_github.go      (NEW)
+handlers/oauth_handlers.go
 cmd/server/main.go
 templates/login.html
+templates/register.html
 db/repo.go
 db/schema.sql
 ```
@@ -67,10 +68,11 @@ db/schema.sql
 ### Files to Create / Modify
 
 ```text
-handlers/auth_google.go      (NEW)
-handlers/auth.go
+handlers/oauth_google.go      (NEW)
+handlers/oauth_handlers.go
 cmd/server/main.go
 templates/login.html
+templates/register.html
 db/repo.go
 db/schema.sql
 ```
@@ -93,13 +95,11 @@ db/schema.sql
 ### Files to Modify
 
 ```text
-handlers/auth.go
+handlers/oauth_handlers.go
 middleware/auth.go
-templates/login.html
-handlers/home.go
-db/repo.go
-handlers/auth_test.go
-tests/auth_oauth_test.go     (NEW)
+handlers/
+auth_test.go
+handlers/oauth_test.go     (NEW)
 ```
 
 # Suggested Project Structure
@@ -111,15 +111,25 @@ forum/
 ├── db/
 │   ├── schema.sql
 │   ├── repo.go
-│   └── repo_extra.go        (unchanged, not used for OAuth)
+│   └── auth_test.go
 ├── handlers/
 │   ├── auth.go
 │   ├── auth_github.go       (NEW)
 │   ├── auth_google.go       (NEW)
-│   └── home.go
+│   ├── auth_test.go
+│   ├── oauth_test.go        (NEW)
+│   └── oauth_handlers.go    (NEW)
 ├── middleware/
 │   └── auth.go
+├── handlers/
+│   ├── css/styles.css
+│   └── images/
 ├── templates/
+│   ├── register.html
 │   └── login.html
+├── .env.example
+├── .gitignore
+├── build.sh
+├── README.md
 └── Authentication.md
 ```

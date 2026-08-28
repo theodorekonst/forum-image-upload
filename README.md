@@ -17,9 +17,11 @@ forum subject. No frontend framework is used.
 - Password hashing with `bcrypt`
 - Generic login errors that do not reveal whether an account exists
 - UUID-based sessions stored in SQLite
-- `HttpOnly`, `SameSite=Strict` cookies with a 24-hour expiration
+- `HttpOnly`, `SameSite=Lax` cookies with a 24-hour expiration
 - One active session per user: a new login invalidates previous sessions
 - Guest-only login and registration pages
+- OAuth login support for GitHub, Google and Discord
+- State validation and secure callback handling for OAuth providers
 
 ### Posts, comments, and categories
 
@@ -97,8 +99,13 @@ Open [http://localhost:8080](http://localhost:8080).
 
 ```bash
 docker build -t forum .
-docker run --name forum -p 8080:8080 forum
+docker run --name forum -p 8080:8080 --env-file .env forum
 ```
+
+The container expects the required OAuth variables from `.env`, including
+`APP_BASE_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`,
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, and
+`DISCORD_CLIENT_SECRET`.
 
 The container creates `forum.db` and initializes the schema and default
 categories on first startup.
@@ -183,6 +190,12 @@ tombstones.
 | `GET`, `POST` | `/register` | Guests | Register an account |
 | `GET`, `POST` | `/login` | Guests | Log in |
 | `POST` | `/logout` | Registered | End the active session |
+| `GET` | `/auth/github` | Public | Start GitHub OAuth login |
+| `GET` | `/auth/github/callback` | Public | Handle GitHub OAuth callback |
+| `GET` | `/auth/google` | Public | Start Google OAuth login |
+| `GET` | `/auth/google/callback` | Public | Handle Google OAuth callback |
+| `GET` | `/auth/discord` | Public | Start Discord OAuth login |
+| `GET` | `/auth/discord/callback` | Public | Handle Discord OAuth callback |
 | `GET` | `/post?id={id}` | Public | View a post and its comments |
 | `GET`, `POST` | `/post/create` | Registered | Display or submit the post form |
 | `POST` | `/post/delete` | Post author | Delete a post |
