@@ -13,6 +13,8 @@ import (
 // GoogleLoginHandler begins the OAuth flow by redirecting the user to Google's authorization page.
 func GoogleLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// 1. Generate OAuth state
 		state, err := generateOAuthState()
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to start Google login.")
@@ -20,6 +22,7 @@ func GoogleLoginHandler(store *db.Store) http.HandlerFunc {
 		}
 		setOAuthStateCookie(w, state)
 
+		// 2. Build Google authorization URL
 		params := url.Values{}
 		params.Add("client_id", config.GoogleClientID)
 		params.Add("redirect_uri", config.RedirectURL("/auth/google/callback"))
@@ -30,6 +33,8 @@ func GoogleLoginHandler(store *db.Store) http.HandlerFunc {
 		params.Add("state", state)
 
 		authURL := "https://accounts.google.com/o/oauth2/v2/auth?" + params.Encode()
+
+		// 3. Redirect user to Google OAuth page
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}
 }
@@ -38,12 +43,14 @@ func GoogleLoginHandler(store *db.Store) http.HandlerFunc {
 func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// 1. Read authorization code
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			RenderError(w, http.StatusBadRequest, "Missing authorization code.")
 			return
 		}
 
+		// 2. Validate OAuth state
 		state := r.URL.Query().Get("state")
 		if !validateOAuthState(r, state) {
 			RenderError(w, http.StatusBadRequest, "Invalid OAuth state.")
@@ -51,6 +58,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 		clearOAuthStateCookie(w)
 
+		// 3. Exchange code for access token
 		tokenReqBody := url.Values{}
 		tokenReqBody.Set("client_id", config.GoogleClientID)
 		tokenReqBody.Set("client_secret", config.GoogleClientSecret)
@@ -72,7 +80,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 		defer tokenResp.Body.Close()
 
-		// Parse token response
+		// 4. Parse token response
 		var tokenData struct {
 			AccessToken string `json:"access_token"`
 			IDToken     string `json:"id_token"`
@@ -90,7 +98,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// 3. Retrieve Google user profile using the access token
+		// 5. Retrieve Google user profile
 		reqUser, _ := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
 		reqUser.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
 
@@ -101,7 +109,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 		defer userResp.Body.Close()
 
-		// Parse user profile
+		// 6. Parse user profile
 		var gUser struct {
 			ID    string `json:"id"`
 			Email string `json:"email"`
@@ -113,7 +121,7 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// 4. Create or link the OAuth user, then establish a session
+		// 7. Create or link OAuth user
 		provider := "google"
 		oauthID := gUser.ID
 
@@ -124,14 +132,14 @@ func GoogleCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Create session and set cookie
+		// 8. Create session and set cookie
 		if err := CreateSessionAndSetCookie(w, store, user); err != nil {
 			log.Println("error creating session:", err)
 			RenderError(w, http.StatusInternalServerError, "Failed to create session.")
 			return
 		}
 
-		// 5. Redirect user to home page after successful login
+		// 9. Redirect user to home page
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }

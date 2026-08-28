@@ -24,6 +24,8 @@ func normalizeDiscordUsername(username, discriminator string) string {
 // DiscordLoginHandler begins the OAuth flow by redirecting the user to Discord's authorization page.
 func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// 1. Generate OAuth state
 		state, err := generateOAuthState()
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to start Discord login.")
@@ -31,6 +33,7 @@ func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 		}
 		setOAuthStateCookie(w, state)
 
+		// 2. Build Discord authorization URL
 		authBase := "https://discord.com/api/oauth2/authorize"
 		params := url.Values{}
 		params.Add("client_id", config.DiscordClientID)
@@ -40,6 +43,8 @@ func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 		params.Add("state", state)
 
 		authURL := authBase + "?" + params.Encode()
+
+		// 3. Redirect user to Discord OAuth page
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}
 }
@@ -48,12 +53,14 @@ func DiscordLoginHandler(store *db.Store) http.HandlerFunc {
 func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// 1. Read authorization code
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			RenderError(w, http.StatusBadRequest, "Missing authorization code.")
 			return
 		}
 
+		// 2. Validate OAuth state
 		state := r.URL.Query().Get("state")
 		if !validateOAuthState(r, state) {
 			RenderError(w, http.StatusBadRequest, "Invalid OAuth state.")
@@ -61,6 +68,7 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 		clearOAuthStateCookie(w)
 
+		// 3. Exchange code for access token
 		tokenURL := "https://discord.com/api/oauth2/token"
 
 		tokenReqBody := url.Values{}
@@ -89,7 +97,7 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Parse token response
+		// 4. Parse token response
 		var tokenData struct {
 			AccessToken string `json:"access_token"`
 			TokenType   string `json:"token_type"`
@@ -107,7 +115,7 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// 3. Retrieve Discord user profile using the access token
+		// 5. Retrieve Discord user profile
 		userInfoURL := "https://discord.com/api/users/@me"
 
 		reqUser, _ := http.NewRequest("GET", userInfoURL, nil)
@@ -129,7 +137,7 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Parse user profile
+		// 6. Parse user profile
 		var dUser struct {
 			ID            string `json:"id"`
 			Username      string `json:"username"`
@@ -142,11 +150,9 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// 4. Create or link the OAuth user, then establish a session
+		// 7. Create or link OAuth user
 		provider := "discord"
 		oauthID := dUser.ID
-
-		// Build a display username without forcing a legacy discriminator when Discord has migrated to username-only accounts.
 		uname := normalizeDiscordUsername(dUser.Username, dUser.Discriminator)
 
 		user, err := CreateOrLinkOAuthUser(store, provider, oauthID, dUser.Email, uname)
@@ -156,14 +162,14 @@ func DiscordCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Create session and set cookie
+		// 8. Create session and set cookie
 		if err := CreateSessionAndSetCookie(w, store, user); err != nil {
 			log.Println("error creating session:", err)
 			RenderError(w, http.StatusInternalServerError, "Failed to create session.")
 			return
 		}
 
-		// 5. Redirect user to home page after successful login
+		// 9. Redirect user to home page
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }

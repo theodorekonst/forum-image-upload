@@ -15,6 +15,8 @@ import (
 // GitHubLoginHandler begins the OAuth flow by redirecting the user to GitHub's authorization page.
 func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// 1. Generate OAuth state
 		state, err := generateOAuthState()
 		if err != nil {
 			RenderError(w, http.StatusInternalServerError, "Failed to start GitHub login.")
@@ -22,6 +24,7 @@ func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 		}
 		setOAuthStateCookie(w, state)
 
+		// 2. Build GitHub authorization URL
 		params := url.Values{}
 		params.Add("client_id", config.GitHubClientID)
 		params.Add("redirect_uri", config.RedirectURL("/auth/github/callback"))
@@ -29,6 +32,8 @@ func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 		params.Add("state", state)
 
 		authURL := "https://github.com/login/oauth/authorize?" + params.Encode()
+
+		// 3. Redirect user to GitHub OAuth page
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}
 }
@@ -37,12 +42,14 @@ func GitHubLoginHandler(store *db.Store) http.HandlerFunc {
 func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// 1. Read authorization code
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			RenderError(w, http.StatusBadRequest, "Missing authorization code.")
 			return
 		}
 
+		// 2. Validate OAuth state
 		state := r.URL.Query().Get("state")
 		if !validateOAuthState(r, state) {
 			RenderError(w, http.StatusBadRequest, "Invalid OAuth state.")
@@ -50,6 +57,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 		clearOAuthStateCookie(w)
 
+		// 3. Exchange code for access token
 		clientID := config.GitHubClientID
 		clientSecret := config.GitHubClientSecret
 
@@ -59,7 +67,6 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		tokenReqBody.Set("code", code)
 		tokenReqBody.Set("redirect_uri", config.RedirectURL("/auth/github/callback"))
 
-		// GitHub requires Accept: application/json for token responses
 		req, _ := http.NewRequest(
 			"POST",
 			"https://github.com/login/oauth/access_token",
@@ -75,7 +82,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 		}
 		defer tokenResp.Body.Close()
 
-		// Parse token response
+		// 4. Parse token response
 		var tokenData struct {
 			AccessToken string `json:"access_token"`
 			TokenType   string `json:"token_type"`
@@ -92,7 +99,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// 3. Retrieve GitHub user profile using the access token
+		// 5. Retrieve GitHub user profile
 		reqUser, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
 		reqUser.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
 		reqUser.Header.Set("Accept", "application/vnd.github+json")
@@ -112,7 +119,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Parse basic GitHub user info
+		// 6. Parse basic GitHub user info
 		var ghUser struct {
 			ID    int64  `json:"id"`
 			Login string `json:"login"`
@@ -124,8 +131,9 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// 4. If email is missing, fetch verified emails from /user/emails
+		// 7. If email is missing, fetch verified emails
 		if ghUser.Email == "" {
+
 			reqEmails, _ := http.NewRequest("GET", "https://api.github.com/user/emails", nil)
 			reqEmails.Header.Set("Authorization", "Bearer "+tokenData.AccessToken)
 			reqEmails.Header.Set("Accept", "application/vnd.github+json")
@@ -135,6 +143,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 				defer emailsResp.Body.Close()
 
 				if emailsResp.StatusCode >= 200 && emailsResp.StatusCode < 300 {
+
 					var emails []struct {
 						Email    string `json:"email"`
 						Primary  bool   `json:"primary"`
@@ -175,7 +184,7 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 			}
 		}
 
-		// 5. Create or link the OAuth user, then establish a session
+		// 8. Create or link OAuth user
 		provider := "github"
 		oauthID := strconv.FormatInt(ghUser.ID, 10)
 
@@ -186,14 +195,14 @@ func GitHubCallbackHandler(store *db.Store) http.HandlerFunc {
 			return
 		}
 
-		// Create session and set cookie
+		// 9. Create session and set cookie
 		if err := CreateSessionAndSetCookie(w, store, user); err != nil {
 			log.Println("error creating session:", err)
 			RenderError(w, http.StatusInternalServerError, "Failed to create session.")
 			return
 		}
 
-		// 6. Redirect user to home page after successful login
+		// 10. Redirect user to home page
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
