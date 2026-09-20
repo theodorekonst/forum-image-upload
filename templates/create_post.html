@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Post</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/images/01%20orange.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <nav class="site-nav">
+        <a class="site-logo" href="/">
+            <img src="/static/images/Logo%20Full%20Orange.svg" alt="Forum home">
+        </a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+        </div>
+    </nav>
+
+    <main class="content-page">
+        <section class="form-panel" aria-labelledby="create-post-heading">
+            <h1 id="create-post-heading" class="sr-only">Create post</h1>
+            <form class="content-form" method="POST" action="/post/create" novalidate>
+                <div class="form-field{{if .TitleError}} has-error{{end}}">
+                    <label for="post-title">Title</label>
+                    <input id="post-title" type="text" name="title" value="{{.Title}}" required{{if .TitleError}} aria-invalid="true" aria-describedby="post-title-error"{{end}}{{if eq .FirstError "Title"}} autofocus{{end}}>
+                    {{if .TitleError}}<p id="post-title-error" class="field-error" role="alert">{{.TitleError}}</p>{{end}}
+                </div>
+
+                <div class="form-field{{if .ContentError}} has-error{{end}}">
+                    <label for="post-content">Content</label>
+                    <textarea id="post-content" name="content" required{{if .ContentError}} aria-invalid="true" aria-describedby="post-content-error"{{end}}{{if eq .FirstError "Content"}} autofocus{{end}}>{{.Content}}</textarea>
+                    {{if .ContentError}}<p id="post-content-error" class="field-error" role="alert">{{.ContentError}}</p>{{end}}
+                </div>
+
+                <fieldset class="category-options{{if .CategoryError}} has-error{{end}}"{{if .CategoryError}} aria-invalid="true" aria-describedby="post-category-error"{{end}}>
+                    <legend>Categories</legend>
+                    {{range .Categories}}
+                    <label>
+                        <input type="checkbox" name="categories" value="{{.ID}}">
+                        {{.Name}}
+                    </label>
+                    {{end}}
+                    {{if .CategoryError}}<p id="post-category-error" class="field-error" role="alert">{{.CategoryError}}</p>{{end}}
+                </fieldset>
+
+                <button type="submit">Publish post</button>
+            </form>
+        </section>
+    </main>
+
+    <script src="/static/js/form-errors.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/images/01%20orange.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    </head>
+    <body>
+        <main class="auth-page">
+            <section class="form-panel" aria-labelledby="login-heading">
+                <a class="auth-home-link" href="/">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Home
+                </a>
+                <img class="auth-logo" src="/static/images/01 orange.svg" alt="Forum">
+                <h1 id="login-heading" class="sr-only">Log in</h1>
+                <form class="content-form" method="POST" action="/login" novalidate>
+                    <div class="form-field{{if or .EmailError .CredentialsError}} has-error{{end}}">
+                        <label for="login-email">Email</label>
+                        <input id="login-email" type="email" name="email" value="{{.Email}}" required{{if .EmailError}} aria-invalid="true" aria-describedby="login-email-error"{{else if .CredentialsError}} aria-invalid="true" aria-describedby="login-credentials-error"{{end}}{{if eq .FirstError "Email"}} autofocus{{end}}>
+                        {{if .EmailError}}<p id="login-email-error" class="field-error" role="alert">{{.EmailError}}</p>{{end}}
+                    </div>
+
+                    <div class="form-field{{if or .PasswordError .CredentialsError}} has-error{{end}}">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" type="password" name="password" required{{if .PasswordError}} aria-invalid="true" aria-describedby="login-password-error"{{else if .CredentialsError}} aria-invalid="true" aria-describedby="login-credentials-error"{{end}}{{if eq .FirstError "Password"}} autofocus{{end}}>
+                        {{if .PasswordError}}<p id="login-password-error" class="field-error" role="alert">{{.PasswordError}}</p>{{end}}
+                        {{if .CredentialsError}}<p id="login-credentials-error" class="field-error credentials-error" role="alert">{{.CredentialsError}}</p>{{end}}
+                    </div>
+
+                    <button type="submit">Log in</button>
+                    <p class="form-copy">Don't have an account? <a href="/register">Register</a></p>
+                </form>
+
+                <!-- OAuth Section -->
+                <div class="oauth-section">
+                    <p class="oauth-divider">or</p>
+
+                    <!-- GitHub -->
+                    <a href="/auth/github" class="oauth-btn" aria-label="Login with GitHub">
+                        <img src="/static/images/github-mark.svg" alt="" aria-hidden="true">
+                        Login with GitHub
+                    </a>
+                    
+                    <!-- Google -->
+                    <a href="/auth/google" class="oauth-btn" aria-label="Login with Google">
+                        <img src="/static/images/google-mark.svg" alt="" aria-hidden="true">
+                        Login with Google
+                    </a>
+
+                    <!-- Discord -->
+                    <a href="/auth/discord" class="oauth-btn" aria-label="Login with Discord">
+                        <img src="/static/images/discord-mark.svg" alt="" aria-hidden="true">
+                        Login with Discord
+                    </a>
+                </div>
+            </section>
+        </main>
+        <script src="/static/js/form-errors.js"></script>
+    </body>
+</html>

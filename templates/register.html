@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/images/01%20orange.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    </head>
+    <body>
+        <main class="auth-page">
+            <section class="form-panel" aria-labelledby="register-heading">
+                <a class="auth-home-link" href="/">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    Home
+                </a>
+                <img class="auth-logo" src="/static/images/01 orange.svg" alt="Forum">
+                <h1 id="register-heading" class="sr-only">Register</h1>
+                <form class="content-form" method="POST" action="/register" novalidate>
+                    <div class="form-field{{if .EmailError}} has-error{{end}}">
+                        <label for="register-email">Email</label>
+                        <input id="register-email" type="email" name="email" value="{{.Email}}" required{{if .EmailError}} aria-invalid="true" aria-describedby="register-email-error"{{end}}{{if eq .FirstError "Email"}} autofocus{{end}}>
+                        {{if .EmailError}}<p id="register-email-error" class="field-error" role="alert">{{.EmailError}}</p>{{end}}
+                    </div>
+
+                    <div class="form-field{{if .UsernameError}} has-error{{end}}">
+                        <label for="register-username">Username</label>
+                        <input id="register-username" type="text" name="username" value="{{.Username}}" required{{if .UsernameError}} aria-invalid="true" aria-describedby="register-username-error"{{end}}{{if eq .FirstError "Username"}} autofocus{{end}}>
+                        {{if .UsernameError}}<p id="register-username-error" class="field-error" role="alert">{{.UsernameError}}</p>{{end}}
+                    </div>
+
+                    <div class="form-field{{if .PasswordError}} has-error{{end}}">
+                        <label for="register-password">Password</label>
+                        <input id="register-password" type="password" name="password" required{{if .PasswordError}} aria-invalid="true" aria-describedby="register-password-error"{{end}}{{if eq .FirstError "Password"}} autofocus{{end}}>
+                        {{if .PasswordError}}<p id="register-password-error" class="field-error" role="alert">{{.PasswordError}}</p>{{end}}
+                    </div>
+
+                    <div class="form-field{{if .ConfirmPasswordError}} has-error{{end}}">
+                        <label for="register-confirm-password">Confirm password</label>
+                        <input id="register-confirm-password" type="password" name="confirm_password" required{{if .ConfirmPasswordError}} aria-invalid="true" aria-describedby="register-confirm-password-error confirm-password-status"{{else}} aria-describedby="confirm-password-status"{{end}}{{if eq .FirstError "ConfirmPassword"}} autofocus{{end}}>
+                        {{if .ConfirmPasswordError}}<p id="register-confirm-password-error" class="field-error" role="alert">{{.ConfirmPasswordError}}</p>{{end}}
+                        <p id="confirm-password-status" class="field-hint" aria-live="polite"></p>
+                    </div>
+
+                    <button type="submit">Register</button>
+                    <p class="form-copy">Already have an account? <a href="/login">Log in</a></p>
+                </form>
+
+                <!-- OAuth Section -->
+                <div class="oauth-section">
+                    <p class="oauth-divider">or</p>
+
+                    <!-- GitHub -->
+                    <a href="/auth/github" class="oauth-btn" aria-label="Register with GitHub">
+                        <img src="/static/images/github-mark.svg" alt="" aria-hidden="true">
+                        Register with GitHub
+                    </a>
+
+                    <!-- Google -->
+                    <a href="/auth/google" class="oauth-btn" aria-label="Register with Google">
+                        <img src="/static/images/google-mark.svg" alt="" aria-hidden="true">
+                        Register with Google
+                    </a>
+
+                    <!-- Discord -->
+                     <a href="/auth/discord" class="oauth-btn" aria-label="Register with Discord">
+                        <img src="/static/images/discord-mark.svg" alt="" aria-hidden="true">
+                        Register with Discord
+                    </a>
+                </div>
+            </section>
+        </main>
+        <script src="/static/js/form-errors.js"></script>
+        <script src="/static/js/register-validation.js"></script>
+    </body>
+</html>
