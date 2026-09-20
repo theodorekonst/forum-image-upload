@@ -27,6 +27,10 @@ forum subject. No frontend framework is used.
 
 - Public post feed and post detail pages
 - Authenticated post and comment creation
+- Optional image attachment on posts (PNG, JPEG, or GIF, up to 20MB)
+- Real image type detection on upload, independent of the file extension
+- Images stored in SQLite and served through a dedicated route
+- Click-to-expand image lightbox on the post page
 - Server-side validation for empty or whitespace-only content
 - One or more categories required for every post
 - Atomic post and category creation using an SQLite transaction
@@ -198,6 +202,7 @@ tombstones.
 | `GET` | `/auth/discord/callback` | Public | Handle Discord OAuth callback |
 | `GET` | `/post?id={id}` | Public | View a post and its comments |
 | `GET`, `POST` | `/post/create` | Registered | Display or submit the post form |
+| `GET` | `/post/image?id={id}` | Public | Serve the image attached to a post |
 | `POST` | `/post/delete` | Post author | Delete a post |
 | `POST` | `/post/react` | Registered | Like, dislike, or clear a post reaction |
 | `POST` | `/comment/create` | Registered | Create a comment or reply |
@@ -229,7 +234,7 @@ Main tables:
 |---|---|
 | `users` | Accounts and bcrypt password hashes |
 | `sessions` | UUID session tokens and expiration timestamps |
-| `posts` | Forum posts and their authors |
+| `posts` | Forum posts, their authors, and an optional attached image |
 | `comments` | Comments, replies, and deletion tombstones |
 | `categories` | Available post categories |
 | `post_categories` | Many-to-many relationship between posts and categories |
