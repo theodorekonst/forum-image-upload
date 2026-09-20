@@ -17,12 +17,8 @@ The goal is to support:
 
 ```text
 main            → final submission + documentation
-dev             → integration + testing
-image-upload    → image upload implementation
+dev             → integration + image upload implementation + testing
 ```
-
-The feature is implemented on `image-upload`, merged into `dev` for testing,
-and finally merged into `main` when stable.
 
 ---
 
