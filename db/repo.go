@@ -174,14 +174,18 @@ func (s *Store) CreatePost(authorID int64, title, content string) (int64, error)
 }
 
 func (s *Store) GetPostByID(id int64) (*Post, error) {
-	row := s.DB.QueryRow(`SELECT id, author_id, title, content, created_at FROM posts WHERE id = ?`, id)
+	row := s.DB.QueryRow(`SELECT id, author_id, title, content, image_data, image_type, image_size, created_at FROM posts WHERE id = ?`, id)
 	var post Post
-	if err := row.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Content, &post.CreatedAt); err != nil {
+	var imageType sql.NullString
+	var imageSize sql.NullInt64
+	if err := row.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Content, &post.ImageData, &imageType, &imageSize, &post.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
+	post.ImageType = imageType.String
+	post.ImageSize = imageSize.Int64
 	return &post, nil
 }
 

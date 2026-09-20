@@ -25,7 +25,7 @@
     <main class="content-page">
         <section class="form-panel" aria-labelledby="create-post-heading">
             <h1 id="create-post-heading" class="sr-only">Create post</h1>
-            <form class="content-form" method="POST" action="/post/create" novalidate>
+            <form class="content-form" method="POST" action="/post/create" enctype="multipart/form-data" novalidate>
                 <div class="form-field{{if .TitleError}} has-error{{end}}">
                     <label for="post-title">Title</label>
                     <input id="post-title" type="text" name="title" value="{{.Title}}" required{{if .TitleError}} aria-invalid="true" aria-describedby="post-title-error"{{end}}{{if eq .FirstError "Title"}} autofocus{{end}}>
@@ -36,6 +36,15 @@
                     <label for="post-content">Content</label>
                     <textarea id="post-content" name="content" required{{if .ContentError}} aria-invalid="true" aria-describedby="post-content-error"{{end}}{{if eq .FirstError "Content"}} autofocus{{end}}>{{.Content}}</textarea>
                     {{if .ContentError}}<p id="post-content-error" class="field-error" role="alert">{{.ContentError}}</p>{{end}}
+                </div>
+
+                <div class="form-field{{if .ImageError}} has-error{{end}}">
+                    <label for="post-image">Image</label>
+                    <div class="file-input-row">
+                        <input id="post-image" type="file" name="image" accept="image/png,image/jpeg,image/gif"{{if .ImageError}} aria-invalid="true" aria-describedby="post-image-error"{{end}}>
+                        <span class="field-hint">PNG, JPEG, or GIF, max 20MB</span>
+                    </div>
+                    {{if .ImageError}}<p id="post-image-error" class="field-error" role="alert">{{.ImageError}}</p>{{end}}
                 </div>
 
                 <fieldset class="category-options{{if .CategoryError}} has-error{{end}}"{{if .CategoryError}} aria-invalid="true" aria-describedby="post-category-error"{{end}}>
@@ -55,6 +64,7 @@
     </main>
 
     <script src="/static/js/form-errors.js"></script>
+    <script src="/static/js/image-size-check.js"></script>
 </body>
 
 </html>

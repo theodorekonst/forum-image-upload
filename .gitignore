@@ -1,0 +1,17 @@
+# Ignore generated SQLite database files
+*.db
+
+# Ignore coverage output
+*.out
+
+# Ignore editor temp files
+*.swp
+*.tmp
+.DS_Store
+
+# Ignore Go build outputs
+bin/
+
+# Ignore environment variables
+.env
+.envrc

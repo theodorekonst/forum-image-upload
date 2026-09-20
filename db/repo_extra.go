@@ -7,7 +7,7 @@ import (
 
 // CreatePostWithCategories creates a post and all of its category links
 // atomically. No post is persisted if any category is invalid.
-func (s *Store) CreatePostWithCategories(authorID int64, title, content string, categoryIDs []int64) (int64, error) {
+func (s *Store) CreatePostWithCategories(authorID int64, title, content string, categoryIDs []int64, imageData []byte, imageType string, imageSize int64) (int64, error) {
 	if len(categoryIDs) == 0 {
 		return 0, ErrCategoryRequired
 	}
@@ -38,8 +38,8 @@ func (s *Store) CreatePostWithCategories(authorID int64, title, content string, 
 	}
 
 	result, err := tx.Exec(
-		`INSERT INTO posts (author_id, title, content) VALUES (?, ?, ?)`,
-		authorID, title, content,
+		`INSERT INTO posts (author_id, title, content, image_data, image_type, image_size) VALUES (?, ?, ?, ?, ?, ?)`,
+		authorID, title, content, imageData, imageType, imageSize,
 	)
 	if err != nil {
 		return 0, err

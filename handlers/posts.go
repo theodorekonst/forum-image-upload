@@ -4,11 +4,15 @@ import (
 	"errors"
 	"forum/db"
 	"forum/middleware"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
+
+// maxImageSize is the largest image accepted on a post, per the image-upload subject.
+const maxImageSize = 20 << 20 // 20 MB
 
 func CreatePostHandler(store *db.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -29,9 +33,76 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 
 		}
 		if r.Method == http.MethodPost {
+			r.Body = http.MaxBytesReader(w, r.Body, maxImageSize)
+			isMultipart := true
+			switch err := r.ParseMultipartForm(maxImageSize); {
+			case err == nil:
+				// multipart form parsed, image (if any) is available via r.FormFile.
+			case errors.Is(err, http.ErrNotMultipart):
+				// plain application/x-www-form-urlencoded request, no image possible.
+				isMultipart = false
+				if err := r.ParseForm(); err != nil {
+					RenderError(w, http.StatusBadRequest, "Could not read the form.")
+					return
+				}
+			default:
+				categories, cErr := store.ListCategories()
+				if cErr != nil {
+					RenderError(w, http.StatusInternalServerError, "Could not load categories.")
+					return
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				renderPage(w, "create_post.html", map[string]any{
+					"User":       user,
+					"Categories": categories,
+					"ImageError": "Image is too big. Max size is 20MB.",
+					"FirstError": "Image",
+				})
+				return
+			}
+
 			title := strings.TrimSpace(r.FormValue("title"))
 			content := strings.TrimSpace(r.FormValue("content"))
 			categoryValues := r.Form["categories"]
+
+			var imageData []byte
+			var imageType string
+			var imageSize int64
+			if isMultipart {
+				if file, header, ferr := r.FormFile("image"); ferr == nil {
+					defer file.Close()
+					buf, rerr := io.ReadAll(file)
+					if rerr != nil {
+						RenderError(w, http.StatusInternalServerError, "Could not read the uploaded image.")
+						return
+					}
+					detectedType := http.DetectContentType(buf)
+					if detectedType != "image/png" && detectedType != "image/jpeg" && detectedType != "image/gif" {
+						categories, cErr := store.ListCategories()
+						if cErr != nil {
+							RenderError(w, http.StatusInternalServerError, "Could not load categories.")
+							return
+						}
+						w.WriteHeader(http.StatusBadRequest)
+						renderPage(w, "create_post.html", map[string]any{
+							"User":       user,
+							"Categories": categories,
+							"Title":      title,
+							"Content":    content,
+							"ImageError": "Only PNG, JPEG, and GIF images are allowed.",
+							"FirstError": "Image",
+						})
+						return
+					}
+					imageData = buf
+					imageType = detectedType
+					imageSize = header.Size
+				} else if !errors.Is(ferr, http.ErrMissingFile) {
+					RenderError(w, http.StatusBadRequest, "Could not read the uploaded image.")
+					return
+				}
+			}
+
 			if title == "" || content == "" || len(categoryValues) == 0 {
 				categories, err := store.ListCategories()
 				if err != nil {
@@ -75,7 +146,7 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 				}
 				categoryIDs = append(categoryIDs, cid)
 			}
-			postID, err := store.CreatePostWithCategories(user.ID, title, content, categoryIDs)
+			postID, err := store.CreatePostWithCategories(user.ID, title, content, categoryIDs, imageData, imageType, imageSize)
 			if errors.Is(err, db.ErrCategoryRequired) || errors.Is(err, db.ErrInvalidCategory) {
 				RenderError(w, http.StatusBadRequest, "Invalid category.")
 				return
@@ -89,6 +160,39 @@ func CreatePostHandler(store *db.Store) http.HandlerFunc {
 		}
 
 		RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
+	}
+}
+
+// PostImageHandler serves the image bytes stored with a post.
+func PostImageHandler(store *db.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			RenderError(w, http.StatusMethodNotAllowed, "Method not allowed.")
+			return
+		}
+
+		id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
+		if err != nil {
+			RenderError(w, http.StatusBadRequest, "Invalid post ID.")
+			return
+		}
+
+		post, err := store.GetPostByID(id)
+		if errors.Is(err, db.ErrNotFound) {
+			RenderError(w, http.StatusNotFound, "Post not found.")
+			return
+		}
+		if err != nil {
+			RenderError(w, http.StatusInternalServerError, "Could not load the post.")
+			return
+		}
+		if len(post.ImageData) == 0 {
+			RenderError(w, http.StatusNotFound, "This post has no image.")
+			return
+		}
+
+		w.Header().Set("Content-Type", post.ImageType)
+		w.Write(post.ImageData)
 	}
 }
 

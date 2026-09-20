@@ -282,7 +282,7 @@ func TestCreatePostWithCategoriesIsAtomic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateUser: %v", err)
 	}
-	if _, err := store.CreatePostWithCategories(userID, "Title", "Content", []int64{999999}); !errors.Is(err, ErrInvalidCategory) {
+	if _, err := store.CreatePostWithCategories(userID, "Title", "Content", []int64{999999}, nil, "", 0); !errors.Is(err, ErrInvalidCategory) {
 		t.Fatalf("expected ErrInvalidCategory, got %v", err)
 	}
 
@@ -307,7 +307,7 @@ func TestCreatePostWithCategoriesRequiresCategory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateUser: %v", err)
 	}
-	if _, err := store.CreatePostWithCategories(userID, "Title", "Content", nil); !errors.Is(err, ErrCategoryRequired) {
+	if _, err := store.CreatePostWithCategories(userID, "Title", "Content", nil, nil, "", 0); !errors.Is(err, ErrCategoryRequired) {
 		t.Fatalf("expected ErrCategoryRequired, got %v", err)
 	}
 }

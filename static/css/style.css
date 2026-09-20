@@ -768,6 +768,86 @@ button:disabled {
     text-wrap: balance;
 }
 
+.post-image {
+    border-radius: 10px;
+    display: block;
+    height: auto;
+    margin: 0 auto 1rem;
+    max-height: 32rem;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.post-image-trigger {
+    background: none;
+    border: 0;
+    cursor: zoom-in;
+    display: block;
+    margin: 0 auto 1rem;
+    max-width: 100%;
+    padding: 0;
+}
+
+.post-image-trigger:hover {
+    box-shadow: none;
+    opacity: 1;
+}
+
+.image-lightbox {
+    background: transparent;
+    border: 0;
+    inset: 0;
+    margin: auto;
+    max-height: 90vh;
+    max-width: 90vw;
+    padding: 0;
+}
+
+.image-lightbox::backdrop {
+    background: rgba(3, 6, 12, 0.85);
+    backdrop-filter: blur(3px);
+}
+
+.image-lightbox-image {
+    border-radius: 10px;
+    display: block;
+    max-height: 85vh;
+    max-width: 85vw;
+    object-fit: contain;
+}
+
+.lightbox-close-button {
+    background: rgba(3, 6, 12, 0.6);
+    border: 0;
+    border-radius: 999px;
+    color: #f0f2f6;
+    display: grid;
+    height: 2.25rem;
+    opacity: 0.85;
+    padding: 0;
+    place-items: center;
+    position: fixed;
+    right: 1rem;
+    top: 1rem;
+    width: 2.25rem;
+}
+
+.lightbox-close-button:hover,
+.lightbox-close-button:focus-visible {
+    box-shadow: none;
+    opacity: 1;
+}
+
+.lightbox-close-button svg {
+    fill: none;
+    height: 1.1rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 1.1rem;
+}
+
 .discussion-header {
     align-items: baseline;
     display: flex;
@@ -927,6 +1007,13 @@ button:disabled {
     font-size: 0.8rem;
     min-height: 1.1em;
     margin: 0;
+}
+
+.file-input-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
 }
 
 .field-hint.is-valid {
@@ -1091,6 +1178,23 @@ button:disabled {
 
 /* Small screens */
 @media (max-width: 768px) {
+    .lightbox-close-button {
+        height: 1.85rem;
+        right: 0.6rem;
+        top: 0.6rem;
+        width: 1.85rem;
+    }
+
+    .lightbox-close-button svg {
+        height: 0.9rem;
+        width: 0.9rem;
+    }
+
+    .image-lightbox-image {
+        max-height: 78vh;
+        max-width: 78vw;
+    }
+
     /* Navbar */
     .site-nav {
         min-height: 3.5rem;
