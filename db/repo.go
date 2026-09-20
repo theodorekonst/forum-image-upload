@@ -29,6 +29,9 @@ type Post struct {
 	AuthorID  int64     `json:"author_id"`
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
+	ImageData []byte    `json:"image_data"`
+	ImageType string    `json:"image_type"`
+	ImageSize int64     `json:"image_size"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

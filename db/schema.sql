@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS posts (
     author_id INTEGER NOT NULL,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
+    image_data BLOB,
+    image_type TEXT,
+    image_size INTEGER,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(author_id) REFERENCES users(id) ON DELETE CASCADE
 );
